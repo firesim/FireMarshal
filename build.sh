@@ -2,6 +2,12 @@
 
 export MAKEFLAGS=-j16
 
+# Build the counter program
+mkdir -p buildroot-overlay/usr/bin/
+cd riscv-hpmcounters
+make
+cp hpm_counters ../buildroot-overlay/usr/bin/hpm_counters
+
 # overwrite buildroot's config with ours, then build rootfs
 cp buildroot-config buildroot/.config
 cd buildroot
