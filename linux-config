@@ -1046,7 +1046,7 @@ CONFIG_TMPFS=y
 # Kernel hacking
 #
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="root=/dev/generic-blkdev"
+CONFIG_CMDLINE="root=/dev/sbi-disk"
 # CONFIG_CMDLINE_OVERRIDE is not set
 # CONFIG_EARLY_PRINTK is not set
 

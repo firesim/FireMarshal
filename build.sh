@@ -1,21 +1,25 @@
 #!/bin/bash
+set -e
 
-export MAKEFLAGS=-j16
+LINUX_SRC=/data/repos/linux-pfa
 
 cp buildroot-config buildroot/.config
-cd buildroot
-make -j16
-cd ..
+pushd buildroot
+# Note: Buildroot doesn't support parallel make
+make -j1
+popd
 cp buildroot/output/images/rootfs.ext4 .
 
-cp linux-config riscv-linux/.config
-cd riscv-linux
+# cp linux-config riscv-linux/.config
+pushd $LINUX_SRC
 make -j16 ARCH=riscv vmlinux
-cd ..
+popd
 
-cd riscv-pk
-mkdir build
-cd build
-../configure --host=riscv64-unknown-elf --with-payload=../../riscv-linux/vmlinux
+pushd riscv-pk
+mkdir -p build
+pushd build
+../configure --host=riscv64-unknown-elf --with-payload=$LINUX_SRC/vmlinux
 make -j16
 cp bbl ../../bbl-vmlinux
+popd
+popd
