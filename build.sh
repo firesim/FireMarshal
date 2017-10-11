@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LINUX_SRC=/data/repos/linux-pfa
+LINUX_SRC=${PWD}/riscv-linux
 
 cp buildroot-config buildroot/.config
 pushd buildroot
