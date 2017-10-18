@@ -1,13 +1,12 @@
 [submodule "riscv-linux"]
 	path = riscv-linux
-	url = git@github.com:dayeol/riscv-linux
-	branch = wallclock
+	url = git@github.com:firesim/riscv-linux
 [submodule "buildroot"]
 	path = buildroot
 	url = git@github.com:sifive/buildroot
 [submodule "riscv-pk"]
 	path = riscv-pk
 	url = git@github.com:riscv/riscv-pk
-[submodule "firesim-manager"]
-	path = firesim-manager
-	url = git@github.com:dayeol/firesim-manager
+[submodule "fsim-rtc"]
+	path = fsim-rtc
+	url = git@github.com:firesim/fsim-rtc
