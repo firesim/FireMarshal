@@ -8,3 +8,6 @@
 [submodule "riscv-pk"]
 	path = riscv-pk
 	url = git@github.com:riscv/riscv-pk
+[submodule "firesim-manager"]
+	path = firesim-manager
+	url = git@github.com:dayeol/firesim-manager

@@ -1,2 +1,4 @@
 bbl-vmlinux
 rootfs*.ext2
+
+buildroot-overlay/usr/bin
