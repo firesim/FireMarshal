@@ -3,9 +3,9 @@
 export MAKEFLAGS=-j16
 
 # copy firesim-manager binaries
-make -C firesim-manager
+make -C fsim-rtc
 mkdir -p ./buildroot-overlay/usr/bin
-find firesim-manager -executable -name "fsim*" | xargs -I{} cp {} ./buildroot-overlay/usr/bin
+find fsim-rtc -executable -name "fsim*" | xargs -I{} cp {} ./buildroot-overlay/usr/bin
 
 # overwrite buildroot's config with ours, then build rootfs
 cp buildroot-config buildroot/.config
