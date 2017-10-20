@@ -9,4 +9,4 @@
 	url = git@github.com:riscv/riscv-pk.git
 [submodule "riscv-hpmcounters"]
 	path = riscv-hpmcounters
-	url = git@github.com:ccelio/riscv-hpmcounters.git
+	url = git@github.com:davidbiancolin/riscv-hpmcounters.git
