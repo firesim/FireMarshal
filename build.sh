@@ -9,6 +9,12 @@ make
 cp hpm_counters ../buildroot-overlay/usr/bin/hpm_counters
 cd ..
 
+# Build addition target programs for checking
+cd target_tests
+make
+make install
+cd ..
+
 # overwrite buildroot's config with ours, then build rootfs
 cp buildroot-config buildroot/.config
 cd buildroot
