@@ -9,9 +9,11 @@ pfa_launch: pfa_launch.c
 pfa_launch_nat: pfa_launch.c
 	${CC} ${CFLAGS} -o $@ $^
 
-
 mytime: mytime.c
 	 ${RVCC} -DRISCV ${CFLAGS} -o $@ $^
 
 mytime_nat: mytime.c
 	${CC} ${CFLAGS} -o $@ $^
+
+install: pfa_launch
+	cp pfa_launch ../bin/
