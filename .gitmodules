@@ -1,6 +1,6 @@
 [submodule "riscv-linux"]
 	path = riscv-linux
-	url = git@github.com:riscv/riscv-linux
+	url = git@github.com:WabashOS/riscv-linux
 [submodule "buildroot"]
 	path = buildroot
 	url = git@github.com:sifive/buildroot
