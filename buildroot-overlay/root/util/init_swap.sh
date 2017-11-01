@@ -1,9 +1,13 @@
 #!/bin/sh
-#Disable swap prefetching (not compatible with pfa).
-#Consider re-enabling for baseline experiments
-echo 0 > /proc/sys/vm/page-cluster
-
-# Even though we swap to PFA, linux needs at least one "real" swap device for
-# silly implementation reasons. This will never actually get used.
 mkswap /dev/ram0
 swapon /dev/ram0
+echo 0 > /proc/sys/vm/page-cluster
+
+# Alternative method:
+# dd if=/dev/zero of=/imaswap bs=1M count=100
+# mkswap imaswap
+# losetup /dev/loop0 /imaswap
+# swapon /dev/loop0
+
+# Turn on frontswap (where we intercept swap operations)
+# echo 1 > /sys/module/rswap/parameters/enabled

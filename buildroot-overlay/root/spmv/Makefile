@@ -6,3 +6,5 @@ spmv: spmv_main.c dataset1.h util.h
 spmv-nat: spmv_main.c dataset1.h util.h
 	gcc ${CFLAGS} -o spmv spmv_main.c
 
+dataset1.h:
+	./spmv_getndata.scala

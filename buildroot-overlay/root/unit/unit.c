@@ -52,8 +52,6 @@ bool test_single(void) {
   after = get_cycle();
   printf("Timer verification: %ld\n", after - before);
 
-  /* Protect the page */
-  /* printf("Giving page %p to pfa\n", pg); */
   printf("user calling sys on vaddr %p\n", pg);
   syscall(SYS_pfa, pg);
   printf("user called sys\n");

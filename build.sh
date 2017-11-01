@@ -3,6 +3,10 @@ set -e
 
 LINUX_SRC=${PWD}/riscv-linux
 
+# Update the overlay with pfa_tests
+rm -rf buildroot-overlay/root/*
+cp -r pfa_tests/* buildroot-overlay/root/
+
 cp buildroot-config buildroot/.config
 pushd buildroot
 # Note: Buildroot doesn't support parallel make

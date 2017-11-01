@@ -188,10 +188,37 @@ bool check_sort(type *arr, size_t n)
   return true;
 }
 
+bool pfa_setup(void)
+{
+  int pid = getpid();
+
+  /* Register with cgroup */
+  FILE *cgroup_ctl = fopen("/sys/fs/cgroup/pfa_cg/cgroup.procs", "w");
+  if(!cgroup_ctl) {
+    printf("Failed to register with cgroup\n");
+    return false;
+  }
+  fprintf(cgroup_ctl, "%d\n", pid);
+  fclose(cgroup_ctl);
+
+  /* Register with pfa */
+  int res = syscall(SYS_pfa);
+  if(!res) {
+    printf("Failed to register task with PFA\n");
+    return false;
+  }
+
+  return true;
+}
+
 int main( int argc, char* argv[] )
 {
   uint64_t start, end;
 
+  /* if(!pfa_setup()) { */
+  /*   return EXIT_FAILURE; */
+  /* } */
+  
   start = get_cycle();
 
   if(argc != 2) {
