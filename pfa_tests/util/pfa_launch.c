@@ -14,11 +14,15 @@ int main(int argc, char *argv[]) {
   fclose(cgroup_ctl);
 
   /* Register with pfa */
-  int res = syscall(SYS_pfa);
-  if(!res) {
-    printf("Failed to register task with PFA\n");
-    return EXIT_FAILURE;
-  }
+  FILE *pfa_ctl = fopen("/sys/kernel/pfa/pfa_tsk", "w");
+  fprintf(pfa_ctl, "%d\n", pid);
+  fclose(pfa_ctl);
+
+  /* int res = syscall(SYS_pfa); */
+  /* if(!res) { */
+  /*   printf("Failed to register task with PFA\n"); */
+  /*   return EXIT_FAILURE; */
+  /* } */
 
   printf("Launching \"%s\" as pfa task (pid=%d)\n", argv[1], pid);
   execvp(argv[1], &argv[1]);
