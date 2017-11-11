@@ -12,9 +12,9 @@ pushd buildroot
 # Note: Buildroot doesn't support parallel make
 make -j1
 popd
-cp buildroot/output/images/rootfs.ext4 .
+cp buildroot/output/images/rootfs.ext2 .
 
-# cp linux-config riscv-linux/.config
+cp linux-config-pfa riscv-linux/.config
 pushd $LINUX_SRC
 make -j16 ARCH=riscv vmlinux
 popd
