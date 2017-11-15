@@ -2,22 +2,10 @@
 
 # This script automatically runs tests on linux boot for minimal-interaction
 pushd /root
+./init.sh
 
-# Heavy-weight test
-# ./init.sh
-# echo 32M > /sys/fs/cgroup/pfa_cg/memory.max
-# pushd genome
-# /root/bin/pfa_launch ./assemble little.dat
-# popd
-
-# Medium-weight test
-# ./test.sh
-
-# Light-weight test
-# ./init.sh
-# echo 500K > /sys/fs/cgroup/pfa_cg/memory.max
-# pushd forktest
-# /root/bin/pfa_launch ./fork2
-# popd
+# ./small.sh
+# ./medium.sh
+# ./large.sh
 
 popd
