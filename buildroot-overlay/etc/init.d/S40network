@@ -9,15 +9,20 @@ mkdir -p /run/network
 case "$1" in
   start)
 	printf "Starting network: "
-    ifconfig eth0 hw ether 00:12:6D:00:00:07
+#    ifconfig eth0 hw ether 00:12:6D:00:00:07
 	/sbin/ifup -a
-	/sbin/ifup eth0
+    ip link set eth0 up
+    mac=$(ifconfig | grep -o "..:..:..:..:..:..")
+    machigh=$(echo $mac | cut -c 13-14 -)
+    maclow=$(echo $mac | cut -c 16-17 -)
+    ip addr add 192.168.$((16#$machigh)).$((16#$maclow))/24 dev eth0
+#	/sbin/ifup eth0
 	[ $? = 0 ] && echo "OK" || echo "FAIL"
 	;;
   stop)
 	printf "Stopping network: "
 	/sbin/ifdown -a
-	/sbin/ifdown eth0
+#	/sbin/ifdown eth0
 	[ $? = 0 ] && echo "OK" || echo "FAIL"
 	;;
   restart|reload)

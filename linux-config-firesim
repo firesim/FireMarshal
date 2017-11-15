@@ -61,6 +61,7 @@ CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
 # CONFIG_ARCH_WANTS_THP_SWAP is not set
 # CONFIG_CLEANCACHE is not set
 CONFIG_FRONTSWAP=y
+CONFIG_PFA=y
 # CONFIG_CMA is not set
 # CONFIG_ZSWAP is not set
 # CONFIG_ZPOOL is not set
@@ -1180,7 +1181,7 @@ CONFIG_NLS_DEFAULT="iso8859-1"
 # Kernel hacking
 #
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="root=/dev/sbi-disk transparent_hugepage=never"
+CONFIG_CMDLINE="transparent_hugepage=never root=/dev/generic-blkdev rw"
 # CONFIG_CMDLINE_OVERRIDE is not set
 CONFIG_EARLY_PRINTK=y
 
