@@ -7,6 +7,8 @@ if [ $# -ne 0 ]; then
     LINUX_CONFIG=linux-config-spike
   elif [ $1 == "firesim" ]; then
     LINUX_CONFIG=linux-config-firesim
+  elif [ $1 == "initramfs" ]; then
+    LINUX_CONFIG=linux-config-initramfs
   else
     echo "Please provide a valid platform (or no arguments to default to firesim)"
     exit 1
@@ -21,6 +23,7 @@ LINUX_SRC=${PWD}/riscv-linux
 # Update the overlay with pfa_tests
 mkdir -p buildroot-overlay/root
 rm -rf buildroot-overlay/root/*
+rm -rf buildroot/output/target/root/*
 cp -r pfa_tests/* buildroot-overlay/root/
 
 # overwrite buildroot's config with ours, then build rootfs
@@ -30,6 +33,7 @@ pushd buildroot
 make -j1
 popd
 cp buildroot/output/images/rootfs.ext2 ./rootfs0.ext2
+cp buildroot/output/images/rootfs.cpio .
 
 cp $LINUX_CONFIG riscv-linux/.config
 pushd $LINUX_SRC
