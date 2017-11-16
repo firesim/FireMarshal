@@ -21,6 +21,14 @@ fi
 LINUX_SRC=${PWD}/riscv-linux
 
 # Update the overlay with pfa_tests
+pushd pfa_tests/
+pushd qsort/
+make
+popd
+pushd unit/
+make
+popd
+popd
 mkdir -p buildroot-overlay/root
 rm -rf buildroot-overlay/root/*
 rm -rf buildroot/output/target/root/*
