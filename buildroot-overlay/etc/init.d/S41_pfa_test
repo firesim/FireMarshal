@@ -5,7 +5,7 @@ pushd /root
 ./init.sh
 
 # ./small.sh
-./medium.sh
+# ./medium.sh
 # ./large.sh
 
 popd
