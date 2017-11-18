@@ -25,7 +25,7 @@ cp bbl ../../bbl-vmlinux
 
 # make 7 more copies of the rootfs for f1.16xlarge nodes
 cd ../../
-for i in {1..7}
+for i in {1..31}
 do
     cp rootfs0.ext2 rootfs$i.ext2
 done
