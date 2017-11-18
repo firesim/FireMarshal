@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+case "$1" in
+  start)
+	printf "mutilatebmark: "
+
+    # tell nodes to do different things based on their mac addr
+    mac=$(ifconfig | grep -o "..:..:..:..:..:..")
+    machigh=$(echo $mac | cut -c 13-14 -)
+    maclow=$(echo $mac | cut -c 16-17 -)
+
+    case "$maclow" in
+        02)
+            echo "starting memcached 4"
+            /bin/memcached4.sh
+            ;;
+        03 | 04 | 05 | 06 | 07 | 08)
+            echo "starting mutilate agent"
+            /bin/mutilateagent.sh
+            ;;
+        09)
+            echo "starting mutilate master"
+            sleep 0.001
+            echo "delay done"
+            /bin/mutilatemasterauto.sh
+            ;;
+        *)
+            echo "invalid mac"
+            ;;
+    esac
+	;;
+  stop)
+      echo "stop"
+	;;
+  restart|reload)
+	"$0" stop
+	"$0" start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+
