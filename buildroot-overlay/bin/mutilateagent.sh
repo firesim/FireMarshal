@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mutilate3 -T 4 -A
+mutilate3 -T 4 -A -v
