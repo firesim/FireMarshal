@@ -21,6 +21,7 @@ int do_stuff(size_t size)
 {
   uint8_t *arr = malloc(size);
 
+  printf("Initializing memory\n");
   /* Force the array to be really allocated (no lazy allocation page-faults) */
   for(size_t i = 0; i < size; i++)
   {
@@ -28,6 +29,7 @@ int do_stuff(size_t size)
   }
 
   /* Walk through the array randomly touching/reading in CONTIGUITY sized groups */
+  printf("Done initializing memory. Starting the touchy touchy.\n");
   for(off_t i = 0; i < size / CONTIGUITY; i++)
   {
     uint64_t idx = big_rand() % size;
@@ -45,11 +47,12 @@ int do_stuff(size_t size)
     }
   }
 
+  printf("Done with touchy touch. Checking array.\n");
   /* Check that the array is still good */
   for(size_t i = 0; i < size; i++)
   {
     if(arr[i] != i % 256) {
-      printf("Array Corrupted\n");
+      printf("Array Corrupted Son! (watchudid?!) \n");
       size_t end = MIN(size, i+8192);
       for(; i < end; i++) {
         printf("arr[%d] = %d!\n", i, arr[i]);
@@ -57,6 +60,7 @@ int do_stuff(size_t size)
       return EXIT_FAILURE;
     }
   }
+  printf("Array looks reeeeeal gud\n");
 
   return EXIT_SUCCESS;
 }

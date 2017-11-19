@@ -31,5 +31,5 @@ int main(int argc, char *argv[]) {
   int s;
   pid_t pid = wait(&s);
   after = get_cycle();
-  printf("Time: %ld cycles\n", after - before);
+  fprintf(stderr, "%ld", after - before);
 }
