@@ -163,20 +163,6 @@ void sort(size_t n, type arr[])
 //--------------------------------------------------------------------------
 // Main
 
-#ifdef RISCV
-uint64_t get_cycle(void)
-{
-  register unsigned long __v;
-  __asm__ __volatile__ ("rdcycle %0" : "=r" (__v));
-  return __v;
-}
-#else
-uint64_t get_cycle(void)
-{
-  return 0;
-}
-#endif
-
 bool check_sort(type *arr, size_t n)
 { 
   for(int i = 0; i < (n - 1); i++) {
@@ -190,9 +176,6 @@ bool check_sort(type *arr, size_t n)
 
 int main( int argc, char* argv[] )
 {
-  uint64_t start, end;
-
-  start = get_cycle();
 
   if(argc != 2) {
     printf("usage: ./qsort SIZE\n\tSIZE - size of array to sort (in bytes)\n");
@@ -211,8 +194,6 @@ int main( int argc, char* argv[] )
   printf("Gonna sort me sum datas!\n");
   // Do the sort
   sort(n, arr);
-  end = get_cycle();
-  printf("Took %ld Cycles\n", end - start);
   if(check_sort(arr, n)) {
     printf("Prolly sorted 'em by now\n");
   } else {

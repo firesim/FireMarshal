@@ -1,7 +1,8 @@
-CFLAGS := -O3 -static
+CC = riscv64-unknown-linux-gnu-gcc
+CFLAGS := -O3 -static -DRISCV
+
+CC = gcc
+CFLAGS := -O3
 
 qsort: qsort_main.c util.h
-	riscv64-unknown-linux-gnu-gcc -DRISCV ${CFLAGS} -o qsort qsort_main.c
-
-qsort_nat: qsort_main.c util.h
-	gcc ${CFLAGS} -o qsort_nat qsort_main.c
+	${CC} ${CFLAGS} -o qsort qsort_main.c
