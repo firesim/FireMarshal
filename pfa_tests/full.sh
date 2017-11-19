@@ -6,7 +6,7 @@ echo "Running unit tests"
 echo "Running genome tests"
 pushd /root/genome
 
-LOG=/root/genome_log
+LOG=/root/genome_log.csv
 echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
 cat /sys/kernel/mm/pfa_stat_label >> $LOG
 
@@ -35,7 +35,7 @@ popd
 echo "Running qsort tests"
 pushd /root/qsort
 
-LOG=/root/qsort_log
+LOG=/root/qsort_log.csv
 echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
 cat /sys/kernel/mm/pfa_stat_label >> $LOG
 
