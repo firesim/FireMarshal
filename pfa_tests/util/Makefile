@@ -1,5 +1,5 @@
 
-CC := gcc
+# CC := gcc
 RVCC := riscv64-unknown-linux-gnu-gcc
 CFLAGS := -O3 -static
 
