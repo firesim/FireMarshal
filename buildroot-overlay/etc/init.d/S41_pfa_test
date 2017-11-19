@@ -1,11 +1,21 @@
 #!/bin/bash
 
-# This script automatically runs tests on linux boot for minimal-interaction
-pushd /root
-./init.sh
+case "$1" in
+  start)
+    # This script automatically runs tests on linux boot for minimal-interaction
+    pushd /root
+    ./init.sh
+    # ./small.sh
+    # ./medium.sh
+    # ./large.sh
+    popd
+  ;;
+  stop)
+	;;
+  restart)
+  ;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
 
-# ./small.sh
-# ./medium.sh
-# ./large.sh
-
-popd
