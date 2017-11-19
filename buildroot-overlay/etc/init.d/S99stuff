@@ -25,6 +25,7 @@ case "$1" in
             echo "starting mutilate master"
             sleep 0.001
             echo "delay done"
+            mutilate3 -s 192.168.0.2 --loadonly
             /bin/mutilatemasterauto.sh
             ;;
         *)
