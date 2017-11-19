@@ -28,6 +28,9 @@ popd
 pushd unit/
 make
 popd
+pushd util/
+make
+popd
 popd
 mkdir -p buildroot-overlay/root
 rm -rf buildroot-overlay/root/*
