@@ -14,6 +14,8 @@ case "$1" in
 
     case "$maclow" in
         02)
+            echo "starting l2 interference script"
+            /bin/l2interf &
             echo "starting memcached 4"
             /bin/memcached4.sh
             ;;
