@@ -2,13 +2,12 @@
 # Beware, this is very long and haiiiiry test fool
 
 echo "Running unit tests"
+LOG=/root/full_log.csv
+echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
+cat /sys/kernel/mm/pfa_stat_label >> $LOG
 
 echo "Running genome tests"
 pushd /root/genome
-
-LOG=/root/genome_log.csv
-echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
-cat /sys/kernel/mm/pfa_stat_label >> $LOG
 
 echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
 echo -n "48M,Genome," >> $LOG
@@ -34,10 +33,6 @@ popd
 
 echo "Running qsort tests"
 pushd /root/qsort
-
-LOG=/root/qsort_log.csv
-echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
-cat /sys/kernel/mm/pfa_stat_label >> $LOG
 
 echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
 mytime pfa_launch ./qsort 64000000 2>> $LOG
