@@ -1,15 +1,21 @@
-
 # CC := gcc
-RVCC := riscv64-unknown-linux-gnu-gcc
-CFLAGS := -O3 -static
+# CFLAGS := -O3
 
-mytime: mytime.c
-	 ${RVCC} -DRISCV ${CFLAGS} -o $@ $^
+CC := riscv64-unknown-linux-gnu-gcc
+CFLAGS := -O3 -static -DRISCV
 
-mytime_nat: mytime.c
-	${CC} ${CFLAGS} -o mytime $^
+DEPS := Makefile
 
 install: pfa_launch mytime
 	cp pfa_launch ../bin/
 	cp mytime ../bin/
 	cp run_cg.sh ../bin/
+
+mytime: mytime.o
+	 ${CC} ${CFLAGS} -o $@ $^
+
+%.o: %.c $(DEPS)
+	    $(CC) -c -o $@ $< $(CFLAGS)
+
+clean:
+	rm -f *.o

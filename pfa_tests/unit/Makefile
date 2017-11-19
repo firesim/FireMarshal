@@ -2,7 +2,7 @@
 # CFLAGS := -O3 -static
 
 CC := riscv64-unknown-linux-gnu-gcc
-CFLAGS := -O3 -static -DRISCV
+CFLAGS := -O3 -static
 
 DEPS := util.h Makefile
 
