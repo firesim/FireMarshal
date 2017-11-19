@@ -8,7 +8,18 @@ mkdir -p /run/network
 
 case "$1" in
   start)
-        poweroff
+        mac=$(ifconfig | grep -o "..:..:..:..:..:..")
+        machigh=$(echo $mac | cut -c 13-14 -)
+        maclow=$(echo $mac | cut -c 16-17 -)
+        macbig=$machigh$maclow
+        case "$macbig" in
+        0002 | 0003 | 0004 | 0005)
+            poweroff
+            ;;
+        *)
+            echo "continuing"
+            ;;
+        esac
 	;;
   stop)
 	;;
