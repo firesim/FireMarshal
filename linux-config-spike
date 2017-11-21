@@ -62,6 +62,8 @@ CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
 # CONFIG_CLEANCACHE is not set
 CONFIG_FRONTSWAP=y
 CONFIG_PFA=y
+# This option is mutually exclusive with CONFIG_PFA
+CONFIG_PFA_NW_RMEM=n
 # CONFIG_PFA_VERBOSE is not set
 # CONFIG_PFA_DEBUG is not set
 # CONFIG_PFA_KPFAD is not set
