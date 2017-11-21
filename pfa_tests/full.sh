@@ -1,57 +1,73 @@
 #!/bin/sh
 # Beware, this is very long and haiiiiry test fool
 
+if [ $# -eq 1 ]; then
+  CONFIG=$1
+else
+  CONFIG="UnknownConfig"
+fi
+
 echo "Running unit tests"
 LOG=/root/full_log.csv
-echo -n "Benchmark,MemSize,TotalRuntime," >> $LOG
+echo -n "Config,Benchmark,MemSize,TotalRuntime," >> $LOG
 cat /sys/kernel/mm/pfa_stat_label >> $LOG
-
-echo "Running genome tests"
-pushd /root/genome
-
-echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "48M,Genome," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
-
-echo 32M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "32M,Genome," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
-
-echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "24M,Genome," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
-
-echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "16M,Genome," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
-
-popd
 
 echo "Running qsort tests"
 pushd /root/qsort
 
-echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
+echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Qsort,64000000," >> $LOG
 mytime pfa_launch ./qsort 64000000 2>> $LOG
-echo -n "48M,Qsort," >> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Qsort,48000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 32M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Qsort,32000000," >> $LOG
 mytime pfa_launch ./qsort 64000000 2>> $LOG
-echo -n "32M,Qsort," >> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Qsort,24000000," >> $LOG
 mytime pfa_launch ./qsort 64000000 2>> $LOG
-echo -n "24M,Qsort," >> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Qsort,16000000," >> $LOG
 mytime pfa_launch ./qsort 64000000 2>> $LOG
-echo -n "16M,Qsort," >> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+popd
+
+echo "Running genome tests"
+pushd /root/genome
+
+echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Genome,64000000," >> $LOG
+mytime pfa_launch ./assemble little.dat 2>> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Genome,48000000," >> $LOG
+mytime pfa_launch ./assemble little.dat 2>> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+echo 32M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Genome,32000000," >> $LOG
+mytime pfa_launch ./assemble little.dat 2>> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Genome,24000000," >> $LOG
+mytime pfa_launch ./assemble little.dat 2>> $LOG
+cat /sys/kernel/mm/pfa_stat >> $LOG
+
+echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
+echo -n "$CONFIG,Genome,16000000," >> $LOG
+mytime pfa_launch ./assemble little.dat 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 popd
