@@ -16,28 +16,28 @@ echo "Running qsort tests"
 pushd /root/qsort
 
 echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
-mytime pfa_launch ./qsort 64000000 2>> $LOG
 echo -n "$CONFIG,Qsort,64000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
-mytime pfa_launch ./qsort 64000000 2>> $LOG
 echo -n "$CONFIG,Qsort,48000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 32M > /sys/fs/cgroup/pfa_cg/memory.max
-mytime pfa_launch ./qsort 64000000 2>> $LOG
 echo -n "$CONFIG,Qsort,32000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
-mytime pfa_launch ./qsort 64000000 2>> $LOG
 echo -n "$CONFIG,Qsort,24000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
-mytime pfa_launch ./qsort 64000000 2>> $LOG
 echo -n "$CONFIG,Qsort,16000000," >> $LOG
+mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
 popd
