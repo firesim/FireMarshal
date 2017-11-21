@@ -72,4 +72,4 @@ cat /sys/kernel/mm/pfa_stat >> $LOG
 
 popd
 
-poweroff
+# poweroff
