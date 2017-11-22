@@ -15,10 +15,10 @@ cat /sys/kernel/mm/pfa_stat_label >> $LOG
 echo "Running qsort tests"
 pushd /root/qsort
 
-echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "$CONFIG,Qsort,64000000," >> $LOG
-mytime pfa_launch ./qsort 64000000 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
+# echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
+# echo -n "$CONFIG,Qsort,64000000," >> $LOG
+# mytime pfa_launch ./qsort 64000000 2>> $LOG
+# cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
 echo -n "$CONFIG,Qsort,48000000," >> $LOG
@@ -30,10 +30,10 @@ echo -n "$CONFIG,Qsort,32000000," >> $LOG
 mytime pfa_launch ./qsort 64000000 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
-echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "$CONFIG,Qsort,24000000," >> $LOG
-mytime pfa_launch ./qsort 64000000 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
+# echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
+# echo -n "$CONFIG,Qsort,24000000," >> $LOG
+# mytime pfa_launch ./qsort 64000000 2>> $LOG
+# cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
 echo -n "$CONFIG,Qsort,16000000," >> $LOG
@@ -45,10 +45,10 @@ popd
 echo "Running genome tests"
 pushd /root/genome
 
-echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "$CONFIG,Genome,64000000," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
+# echo 64M > /sys/fs/cgroup/pfa_cg/memory.max
+# echo -n "$CONFIG,Genome,64000000," >> $LOG
+# mytime pfa_launch ./assemble little.dat 2>> $LOG
+# cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 48M > /sys/fs/cgroup/pfa_cg/memory.max
 echo -n "$CONFIG,Genome,48000000," >> $LOG
@@ -60,10 +60,10 @@ echo -n "$CONFIG,Genome,32000000," >> $LOG
 mytime pfa_launch ./assemble little.dat 2>> $LOG
 cat /sys/kernel/mm/pfa_stat >> $LOG
 
-echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
-echo -n "$CONFIG,Genome,24000000," >> $LOG
-mytime pfa_launch ./assemble little.dat 2>> $LOG
-cat /sys/kernel/mm/pfa_stat >> $LOG
+# echo 24M > /sys/fs/cgroup/pfa_cg/memory.max
+# echo -n "$CONFIG,Genome,24000000," >> $LOG
+# mytime pfa_launch ./assemble little.dat 2>> $LOG
+# cat /sys/kernel/mm/pfa_stat >> $LOG
 
 echo 16M > /sys/fs/cgroup/pfa_cg/memory.max
 echo -n "$CONFIG,Genome,16000000," >> $LOG
