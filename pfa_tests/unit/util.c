@@ -16,6 +16,35 @@ uint64_t big_rand(void)
   return r;
 }
 
+static inline uint64_t get_cycle(void)
+{
+	uint64_t n;
+
+	__asm__ __volatile__ (
+		"rdcycle %0"
+		: "=r" (n));
+	return n;
+}
+
+/* XXX TFAULT */
+int time_fault(void) {
+  uintptr_t vaddr;
+  uint8_t val;
+  FILE *le_file = fopen("/sys/kernel/mm/pfa_tsk", "r");
+  fscanf(le_file, "%ld\n", &vaddr);
+  fclose(le_file);
+
+  printf("About to fault\n");
+  uint64_t start = get_cycle();
+  val = *(volatile uint64_t *)vaddr;
+  uint64_t end = get_cycle();
+
+  printf("Faulted once: \n");
+  printf("Start: %lx\tEnd: %lx\n");
+  printf("Took %ld cycles\n", start - end);
+  exit(EXIT_SUCCESS); 
+}
+
 /* This test just walks randomly through memory of size "size" a few times */
 int do_stuff(size_t size)
 {
@@ -30,6 +59,7 @@ int do_stuff(size_t size)
 
   /* Walk through the array randomly touching/reading in CONTIGUITY sized groups */
   printf("Done initializing memory. Starting the touchy touchy.\n");
+  time_fault();
   for(off_t i = 0; i < size / CONTIGUITY; i++)
   {
     uint64_t idx = big_rand() % size;
