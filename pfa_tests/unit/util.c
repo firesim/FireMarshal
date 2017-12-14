@@ -40,8 +40,8 @@ int time_fault(void) {
   uint64_t end = get_cycle();
 
   printf("Faulted once: \n");
-  printf("Start: %lx\tEnd: %lx\n");
-  printf("Took %ld cycles\n", start - end);
+  printf("Start: %lld\tEnd: %lld\n", start, end);
+  printf("Took %llu cycles\n", end - start);
   exit(EXIT_SUCCESS); 
 }
 
