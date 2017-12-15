@@ -37,6 +37,16 @@ rm -rf buildroot-overlay/root/*
 rm -rf buildroot/output/target/root/*
 cp -r pfa_tests/* buildroot-overlay/root/
 
+# Update the overlay with rmem test
+
+pushd remote-memory-sys-lib
+make
+pushd rmem_test
+make
+cp rmem_test ../../buildroot-overlay/root/bin
+popd
+popd
+
 # overwrite buildroot's config with ours, then build rootfs
 cp buildroot-config buildroot/.config
 pushd buildroot

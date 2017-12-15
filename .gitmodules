@@ -7,3 +7,6 @@
 [submodule "riscv-pk"]
 	path = riscv-pk
 	url = git@github.com:firesim/riscv-pk.git
+[submodule "remote-memory-sys-lib"]
+	path = remote-memory-sys-lib
+	url = git@github.com:growly/remote-memory-sys-lib.git
