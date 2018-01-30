@@ -7,3 +7,6 @@
 [submodule "riscv-pk"]
 	path = riscv-pk
 	url = git@github.com:firesim/riscv-pk.git
+[submodule "riscv-hpmcounters"]
+	path = riscv-hpmcounters
+	url = https://github.com/ccelio/riscv-hpmcounters.git
