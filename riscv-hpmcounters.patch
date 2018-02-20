@@ -1,0 +1,102 @@
+diff --git a/Makefile b/Makefile
+index e9cfdcd..d52f695 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,6 @@ LDFLAGS=
+ 
+ hpm_counters: hpm_counters.cxx Makefile
+ 	$(CC) $(CFLAGS) -o $@ $@.cxx
+-	riscv-objdump --disassemble-all $@ > $@.dump
+ 
+ # likely won't work, as we're compiled using glibc
+ run: hpm_counters
+diff --git a/hpm_counters.cxx b/hpm_counters.cxx
+index 749ae1b..8b3dd2d 100644
+--- a/hpm_counters.cxx
++++ b/hpm_counters.cxx
+@@ -18,8 +18,8 @@
+ #define SLEEP_TIME_US (100000)
+ 
+ // How many counters do we support? (change for your micro-architecture).
+-#define NUM_COUNTERS (8)
+-//#define NUM_COUNTERS (32) maximum amount of HPMs is 32
++// #define NUM_COUNTERS (8)
++#define NUM_COUNTERS (13) // maximum amount of HPMs is 32
+ typedef std::array<long, NUM_COUNTERS> snapshot_t;
+ 
+ static char const*               counter_names[NUM_COUNTERS];
+@@ -71,7 +71,7 @@ static int handle_stats(int enable)
+ #define READ_CTR(name) do { \
+       if (i < NUM_COUNTERS) { \
+          long csr = read_csr_safe(name); \
+-         if (enable == INIT)   { init_counters[i] = csr; snapshot[i] = 0; counter_names[i] = #name; } \
++         if (enable == INIT)   { init_counters[i] = csr; snapshot[i] = 0; } \
+          if (enable == WAKEUP) { snapshot[i] = csr - init_counters[i]; } \
+          if (enable == FINISH) { snapshot[i] = csr - init_counters[i]; } \
+          i++; \
+@@ -81,7 +81,7 @@ static int handle_stats(int enable)
+    // Since most processors will not support all 32 HPMs, comment out which hpm counters you don't want to track.
+    READ_CTR(cycle);
+    READ_CTR(instret);
+-   READ_CTR(time);
++   //READ_CTR(time);
+    READ_CTR(hpmcounter3);
+    READ_CTR(hpmcounter4);
+    READ_CTR(hpmcounter5);
+@@ -112,7 +112,7 @@ static int handle_stats(int enable)
+    READ_CTR(hpmcounter30);
+    READ_CTR(hpmcounter31);
+ 
+-   counters.push_back(snapshot);
++   if (enable != INIT) counters.push_back(snapshot);
+ 
+    //printf("Snapshot Time in cycles : %ld\n", read_csr_safe(cycle) - tsc_start);
+    //printf("Snapshot Time in instret: %ld\n", read_csr_safe(instret) - irt_start);
+@@ -120,13 +120,13 @@ static int handle_stats(int enable)
+    step++;
+ 
+ #undef READ_CTR
+-   if (enable == FINISH || step % 30 == 0) { 
++   if (enable == FINISH /*|| step % 30 == 0*/) { 
+       for (auto & element : counters) {
+          for (int i = 0; i < NUM_COUNTERS; i++) {
+             long c = element[i];
+-            if (c) {
++            // if (c) {
+                printf("##  %s = %ld\n", counter_names[i], c);
+-            }
++            // }
+          }
+       }
+       if (enable != FINISH) counters.clear();
+@@ -157,6 +157,19 @@ int main(int argc, char** argv)
+ {
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
++   counter_names[0]  = "cycles            ";
++   counter_names[1]  = "instret           ";
++   counter_names[2]  = "loads             ";
++   counter_names[3]  = "stores            ";
++   counter_names[4]  = "L1 I$ misses      ";
++   counter_names[5]  = "L1 D$ misses      ";
++   counter_names[6]  = "L2$ misses        ";
++   counter_names[7]  = "ITLB misses       ";
++   counter_names[8]  = "DTLB misses       ";
++   counter_names[9]  = "L2 TLB misses     ";
++   counter_names[10] = "branches          ";
++   counter_names[11] = "branch mispredicts";
++   counter_names[12] = "target mispredicts";
+ 
+    if (argc > 1)
+    {
+@@ -171,8 +184,8 @@ int main(int argc, char** argv)
+       handle_stats(INIT);
+       while (1)
+       {
+-         usleep(SLEEP_TIME_US);
+-         handle_stats(WAKEUP);
++         // usleep(SLEEP_TIME_US);
++         // handle_stats(WAKEUP);
+       }
+       //printf("Exiting\n");
+    }

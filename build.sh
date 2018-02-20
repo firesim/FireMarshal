@@ -14,8 +14,8 @@ if [ $# -ne 0 ]; then
     exit 1
   fi
 else
-  PLATFORM="firesim"
-  LINUX_CONFIG=linux-config-firesim
+  PLATFORM="initramfs"
+  LINUX_CONFIG=linux-config-initramfs
 fi
 
 export MAKEFLAGS=-j16
