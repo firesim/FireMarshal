@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <iostream>
+#include <assert.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <stdint.h>
 
 int try_malloc(uint64_t num_bytes){
@@ -47,7 +49,8 @@ int simple_memtest(uint64_t * mem, uint64_t size, uint64_t error = 0){
 
 int main(int argc, char ** argv){
     uint64_t overhead = 0x8000000L;
-    uint64_t mem_size = 0x400000000L - overhead;
+    assert(argc > 1);
+    uint64_t mem_size = std::stoll(std::string(argv[1]));
     //uint64_t mem_size = 0x80000000L - overhead;
     try_malloc(mem_size);
     uint64_t * mem = (uint64_t*)malloc(mem_size);
