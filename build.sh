@@ -49,7 +49,6 @@ cd ..
 
 # build pk, provide vmlinux as payload
 cd riscv-pk
-git apply ../minit.patch
 mkdir -p build
 cd build
 ../configure --host=riscv64-unknown-elf --with-payload=../../riscv-linux/vmlinux
