@@ -1,21 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ $# -ne 0 ]; then
-  PLATFORM=$1
-  if [ $1 == "spike" ]; then
-    LINUX_CONFIG=linux-config-spike
-  elif [ $1 == "firesim" ]; then
+if [ -z $1 ]; then
+    PLATFORM=firesim
     LINUX_CONFIG=linux-config-firesim
-  elif [ $1 == "initramfs" ] ; then
-    LINUX_CONFIG=linux-config-initramfs
-  else
-    echo "Please provide a valid platform (or no arguments to default to firesim)"
-    exit 1
-  fi
 else
-  PLATFORM="firesim"
-  LINUX_CONFIG=linux-config-firesim
+    PLATFORM=$1
+    LINUX_CONFIG=linux-config-$PLATFORM
 fi
 
 export MAKEFLAGS=-j16
