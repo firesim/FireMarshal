@@ -3,31 +3,37 @@ firesim-software
 
 Builds a linux distro for firesim target nodes. Assumes priv 1.10.
 
-## Prereqs:
+# Prereqs:
 
     riscv-tools + riscv-gnu-toolchain for linux
 
-## How to use:
+# How to use:
+You can build the PFA SW image for a number of different targets:
+* spike: The PFA version of the Spike isa simulator (or the vanilla spike if
+  you turn off PFA features)
+* firesim: The RTL simulator, the difference between spike and firesim is mostly in how the disk is managed.
+* initramfs: This version works anywhere, but it doesn't save state between runs.
 
-    ./build.sh
+To build, run:
+    ./build.sh TARGET
 
-## Starting up simplenic (once you're running linux on firesim):
+e.g.
+    ./build.sh initramfs
 
-    ip link set eth0 up
-    ip addr add 192.168.1.2/24 dev eth0
+The default is 'firesim' to maintain compatibility with mainline firesim-software.
 
-## Setting up the tap device for simplenic to talk to on your host machine:
+Running:
+Spike with a disk:
+  spike +disk=rootfs0.ext2 bbl-vmlinux
 
-    sudo ip tuntap add mode tap dev tap0 user $USER
-    sudo ip link set tap0 up
-    sudo ip addr add 192.168.1.1/24 dev tap0
+Spike with initramfs:
+  spike bbl-vmlinux
 
-## How to maintain/bump:
+# Configuring Linux
+Default linux configurations are provided as, e.g., linux-config-spike. Note
+that these replace the .config in riscv-linux/ every time you run ./build.sh so
+you should not expect changes made by "make menuconfig" to be persisted. If you
+would like to change these configurations, run "make ARCH=riscv menuconfig" in
+riscv-linux/ and then copy the .config file to the root firesim-software
+directory. You can also modify the configs directly.
 
-    buildroot: sifive-next branch
-    pk: use commit hash from firesim/sim/midas-top/rocket-chip/riscv-tools/riscv-pk
-    linux: riscv-next branch
-
-## Useful notes:
-
-* http://free-electrons.com/pub/conferences/2013/kernel-recipes/rootfs-kernel-developer/rootfs-kernel-developer.pdf

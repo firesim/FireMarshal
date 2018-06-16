@@ -23,9 +23,11 @@ LINUX_SRC=${PWD}/riscv-linux
 # Update the overlay with pfa_tests
 pushd pfa_tests/
 pushd qsort/
+rm -f qsort
 make
 popd
 pushd unit/
+rm unit
 make
 popd
 pushd util/

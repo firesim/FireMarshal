@@ -59,7 +59,7 @@ int do_stuff(size_t size)
 
   /* Walk through the array randomly touching/reading in CONTIGUITY sized groups */
   printf("Done initializing memory. Starting the touchy touchy.\n");
-  time_fault();
+  /* time_fault(); */
   for(off_t i = 0; i < size / CONTIGUITY; i++)
   {
     uint64_t idx = big_rand() % size;
