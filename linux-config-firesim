@@ -1078,7 +1078,7 @@ CONFIG_NLS_DEFAULT="iso8859-1"
 # Kernel hacking
 #
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="transparent_hugepage=never root=/dev/generic-blkdev rw"
+CONFIG_CMDLINE="transparent_hugepage=madvise root=/dev/generic-blkdev rw"
 # CONFIG_CMDLINE_OVERRIDE is not set
 CONFIG_EARLY_PRINTK=y
 
