@@ -50,7 +50,7 @@ int do_stuff(size_t size)
 {
   uint8_t *arr = malloc(size);
 
-  printf("Initializing memory\n");
+  printf("Initializing memory (pid=%d)\n", getpid());
   /* Force the array to be really allocated (no lazy allocation page-faults) */
   for(size_t i = 0; i < size; i++)
   {
@@ -58,7 +58,7 @@ int do_stuff(size_t size)
   }
 
   /* Walk through the array randomly touching/reading in CONTIGUITY sized groups */
-  printf("Done initializing memory. Starting the touchy touchy.\n");
+  printf("Done initializing memory. Starting the touchy touchy. (pid=%d)\n", getpid());
   /* time_fault(); */
   for(off_t i = 0; i < size / CONTIGUITY; i++)
   {
@@ -77,12 +77,12 @@ int do_stuff(size_t size)
     }
   }
 
-  printf("Done with touchy touch. Checking array.\n");
+  printf("Done with touchy touch. Checking array. (pid=%d)\n", getpid());
   /* Check that the array is still good */
   for(size_t i = 0; i < size; i++)
   {
     if(arr[i] != i % 256) {
-      printf("Array Corrupted Son! (watchudid?!) \n");
+      printf("Array Corrupted Son! (watchudid?!) (pid=%d)\n", getpid());
       size_t end = MIN(size, i+8192);
       for(; i < end; i++) {
         printf("arr[%d] = %d!\n", i, arr[i]);
@@ -90,7 +90,7 @@ int do_stuff(size_t size)
       return EXIT_FAILURE;
     }
   }
-  printf("Array looks reeeeeal gud\n");
+  printf("Array looks reeeeeal gud (pid=%d)\n", getpid());
 
   return EXIT_SUCCESS;
 }

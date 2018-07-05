@@ -13,12 +13,12 @@ int main(int argc, char *argv[])
     size = TEST_SIZE;
   }
 
-  printf("Touching %.2lfM of stuff\n", (double)size / 1000000.0);
+  printf("Touching %.2lfM of stuff (pid=%d)\n", (double)size / 1000000.0, getpid());
   if(do_stuff(size) == EXIT_FAILURE) {
-    printf("Test Failure\n");
+    printf("Test Failure (pid=%d)\n", getpid());
     return EXIT_FAILURE;
   } else {
-    printf("Done wasting time and touchin' memory\n");
+    printf("Done wasting time and touchin' memory (pid=%d)\n", getpid());
     return EXIT_SUCCESS;
   }
 }
