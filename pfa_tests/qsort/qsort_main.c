@@ -191,13 +191,13 @@ int main( int argc, char* argv[] )
     arr[i] = rand();
   }
 
-  printf("Gonna sort me sum datas!\n");
+  printf("Gonna sort me sum datas (pid=%d)!\n", getpid());
   // Do the sort
   sort(n, arr);
   if(check_sort(arr, n)) {
-    printf("Prolly sorted 'em by now\n");
+    printf("Prolly sorted 'em by now (pid=%d)\n", getpid());
   } else {
-    printf("I sorted wrong!!!!\n");
+    printf("I sorted wrong!!!! (pid=%d)\n", getpid());
     return EXIT_FAILURE;
   }
 

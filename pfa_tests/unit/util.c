@@ -16,34 +16,34 @@ uint64_t big_rand(void)
   return r;
 }
 
-static inline uint64_t get_cycle(void)
-{
-	uint64_t n;
-
-	__asm__ __volatile__ (
-		"rdcycle %0"
-		: "=r" (n));
-	return n;
-}
-
-/* XXX TFAULT */
-int time_fault(void) {
-  uintptr_t vaddr;
-  uint8_t val;
-  FILE *le_file = fopen("/sys/kernel/mm/pfa_tsk", "r");
-  fscanf(le_file, "%ld\n", &vaddr);
-  fclose(le_file);
-
-  printf("About to fault\n");
-  uint64_t start = get_cycle();
-  val = *(volatile uint64_t *)vaddr;
-  uint64_t end = get_cycle();
-
-  printf("Faulted once: \n");
-  printf("Start: %lld\tEnd: %lld\n", start, end);
-  printf("Took %llu cycles\n", end - start);
-  exit(EXIT_SUCCESS); 
-}
+/* static inline uint64_t get_cycle(void) */
+/* { */
+/* 	uint64_t n; */
+/*  */
+/* 	__asm__ __volatile__ ( */
+/* 		"rdcycle %0" */
+/* 		: "=r" (n)); */
+/* 	return n; */
+/* } */
+/*  */
+/* #<{(| XXX TFAULT |)}># */
+/* int time_fault(void) { */
+/*   uintptr_t vaddr; */
+/*   uint8_t val; */
+/*   FILE *le_file = fopen("/sys/kernel/mm/pfa_tsk", "r"); */
+/*   fscanf(le_file, "%ld\n", &vaddr); */
+/*   fclose(le_file); */
+/*  */
+/*   printf("About to fault\n"); */
+/*   uint64_t start = get_cycle(); */
+/*   val = *(volatile uint64_t *)vaddr; */
+/*   uint64_t end = get_cycle(); */
+/*  */
+/*   printf("Faulted once: \n"); */
+/*   printf("Start: %lld\tEnd: %lld\n", start, end); */
+/*   printf("Took %llu cycles\n", end - start); */
+/*   exit(EXIT_SUCCESS);  */
+/* } */
 
 /* This test just walks randomly through memory of size "size" a few times */
 int do_stuff(size_t size)
@@ -83,10 +83,10 @@ int do_stuff(size_t size)
   {
     if(arr[i] != i % 256) {
       printf("Array Corrupted Son! (watchudid?!) (pid=%d)\n", getpid());
-      size_t end = MIN(size, i+8192);
-      for(; i < end; i++) {
-        printf("arr[%d] = %d!\n", i, arr[i]);
-      }
+      /* size_t end = MIN(size, i+8192); */
+      /* for(; i < end; i++) { */
+      /*   printf("arr[%d] = %d!\n", i, arr[i]); */
+      /* } */
       return EXIT_FAILURE;
     }
   }
