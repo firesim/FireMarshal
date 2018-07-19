@@ -9,25 +9,35 @@
 "    Size of working set for each process (in bytes)\n" \
 "\n" \
 "  -n NPROC\n"\
-"    Number of processes to fork\n"
+"    Number of processes to fork\n" \
+"\n" \
+"  -l\n"\
+"    Enable pagefault latency test (requires special kernel support)"
 
 int main(int argc, char *argv[])
 {
   size_t size = TEST_SIZE;
   int nproc = 1;
   int c;
+  bool pflat = false;
 
-  while((c = getopt(argc, argv, "s:p:")) != -1) {
+  while((c = getopt(argc, argv, "s:p:l")) != -1) {
     switch(c) {
       case 's':
+        // Size
         size = strtoll(optarg, NULL, 10);
         break;
       case 'p':
+        // Number of processes
         nproc = atoi(optarg);
         if(nproc < 1 || nproc > 100) {
           printf("Unreasonable number of processes requested: %d\n", nproc);
           return EXIT_FAILURE;
         }
+        break;
+      case 'l':
+        //Latency test
+        pflat = true;
         break;
       case '?':
         if(optopt == 's' || optopt == 'p') {
@@ -55,7 +65,7 @@ int main(int argc, char *argv[])
   }
 
   printf("Pid %d starting\n", getpid());
-  if(do_stuff(size) == EXIT_FAILURE) {
+  if(do_stuff(size, pflat) == EXIT_FAILURE) {
     printf("Test Failure (pid=%d)\n", getpid());
     return EXIT_FAILURE;
   } else {

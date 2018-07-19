@@ -2,6 +2,7 @@
 #define _UTIL_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* What percent of touches should be writes? */
 #define WRITE_RATIO 50
@@ -15,7 +16,20 @@
 /* How many things should I touch? */
 #define NTOUCH TEST_SIZE
 
-/* This test just walks randomly through memory of size "size" a few times */
-int do_stuff(size_t);
+/* This test just walks randomly through memory of size "size" a few times
+ * sz: Size of test (in bytes)
+ * pflat: enable page fault latency test
+ *
+ * returns: EXIT_SUCCESS or EXIT_FAILURE
+ */
+int do_stuff(size_t sz, bool pflat);
 
+/* Begin recording evicted pages to be used by time_fault later. Only pages
+ * after a call to this will be reported */
+int start_pflat(void);
+
+/* Take measurements surrounding a single page fault. Will intentionally fault
+ * on the last page evicted since start_pflat was called. This is not super
+ * reliable, sorry. */
+int time_fault(void);
 #endif
