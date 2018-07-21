@@ -2,8 +2,6 @@
 #
 # Start the network....
 #
-echo "Not starting network (change /etc/init.d/S41network to enable)"
-exit
 
 # Debian ifupdown needs the /run/network lock directory
 mkdir -p /run/network
