@@ -44,3 +44,4 @@ or mainline firesim-software), but there are a few changes:
 * Enable sysfs: PFA features are exposed through /sys/kernel/mm/pfa\_\* files
 * Enable ramdisk: We use a ramdisk as swap backing (to trick the kernel). You should create at least one RAM disk with a few MB (I usually do 128MB)
 * Enable frontswap: Used for some PFA interfaces and RSWAP baseline
+* Enable cgroups: At a minimum we require the memory subsystem to be enabled (even to compile)

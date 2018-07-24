@@ -17,25 +17,6 @@ uint64_t big_rand(void)
   return r;
 }
 
-#ifdef __amd64__
-#include <x86intrin.h>
-static inline uint64_t get_cycle(void)
-{
-  return __rdtsc();
-}
-#else
-//I'm not sure what the equivalent for __amd64__ is for riscv...
-static inline uint64_t get_cycle(void)
-{
-	uint64_t n;
-
-	__asm__ __volatile__ (
-		"rdcycle %0"
-		: "=r" (n));
-	return n;
-}
-#endif
-
 int start_pflat(void)
 {
   /* Reset the pf latency system in the kernel */

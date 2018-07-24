@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -17,6 +18,7 @@
 int main(int argc, char *argv[])
 {
   size_t size = TEST_SIZE;
+  uint64_t start, end;
   int nproc = 1;
   int c;
   bool pflat = false;
@@ -65,11 +67,13 @@ int main(int argc, char *argv[])
   }
 
   printf("Pid %d starting\n", getpid());
+  start = get_cycle();
   if(do_stuff(size, pflat) == EXIT_FAILURE) {
     printf("Test Failure (pid=%d)\n", getpid());
     return EXIT_FAILURE;
   } else {
-    printf("Done wasting time and touchin' memory (pid=%d)\n", getpid());
+    end = get_cycle();
+    printf("Done wasting time and touchin' memory. Took %" PRId64 " cycles. (pid=%d)\n", end - start, getpid());
     return EXIT_SUCCESS;
   }
 }

@@ -3,10 +3,10 @@ set -e
 
 if [ $# -ne 0 ]; then
   PLATFORM=$1
-  if [ $1 == "spike" ]; then
-    LINUX_CONFIG=linux-config-spike
-  elif [ $1 == "firesim" ]; then
-    LINUX_CONFIG=linux-config-firesim
+  if [ $1 == "x86" ]; then
+    LINUX_CONFIG=linux-config-x86
+  elif [ $1 == "fedora" ]; then
+    LINUX_CONFIG=linux-config-fedora
   elif [ $1 == "initramfs" ]; then
     LINUX_CONFIG=linux-config-initramfs
   else
@@ -14,8 +14,8 @@ if [ $# -ne 0 ]; then
     exit 1
   fi
 else
-  PLATFORM="firesim"
-  LINUX_CONFIG=linux-config-firesim
+  PLATFORM="initramfs"
+  LINUX_CONFIG=linux-config-initramfs
 fi
 
 LINUX_SRC=${PWD}/riscv-linux
@@ -27,7 +27,7 @@ rm -f qsort
 make
 popd
 pushd unit/
-rm unit
+rm -f unit
 make
 popd
 pushd util/
