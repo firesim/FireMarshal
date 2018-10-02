@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <execinfo.h>
+#include <signal.h>
 #include "util.h"
 
 #define USAGE_STR "./unit [-s SIZE] [-n NPROC]\n" \

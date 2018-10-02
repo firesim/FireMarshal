@@ -2,6 +2,7 @@
 set -e
 
 LINUX_SRC=${PWD}/riscv-linux
+PK_DIR=${PWD}/riscv-pk
 
 if [ $# -ne 0 ]; then
   PLATFORM=$1
@@ -18,6 +19,8 @@ if [ $# -ne 0 ]; then
     LINUX_CONFIG=linux-config-initramfs
   elif [ $1 == "spike" ]; then
     LINUX_CONFIG=linux-config-spike
+  elif [ $1 == "qemu" ]; then
+    LINUX_CONFIG=linux-config-qemu
   else
     echo "Please provide a valid platform (or no arguments to default to firesim)"
     exit 1
@@ -61,7 +64,7 @@ make -j16 ARCH=riscv vmlinux
 popd
 
 # build pk, provide vmlinux as payload
-pushd riscv-pk
+pushd $PK_DIR 
 mkdir -p build
 pushd build
 ../configure --host=riscv64-unknown-elf --with-payload=$LINUX_SRC/vmlinux
