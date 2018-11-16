@@ -86,7 +86,7 @@ def makeBin(config):
     if not os.path.exists('riscv-pk/build'):
       os.mkdir('riscv-pk/build')
 
-    sp.check_call(['../configure', '--host=riscv64-unknown-elf', '--with-payload=../../riscv-linux/vmlinux'], cwd='riscv-pk/build')
+    sp.check_call(['../configure', '--host=riscv64-unknown-elf', '--with-payload=../../riscv-linux/vmlinux', '--enable-sm'], cwd='riscv-pk/build')
     sp.check_call(['make', jlevel], cwd='riscv-pk/build')
     shutil.copy('riscv-pk/build/bbl',
       os.path.join("images", config['name'] + "-bin"))
