@@ -10,8 +10,10 @@ do
     hpm_pids+=($!)
     taskset -p `printf %x $mask_decimal` $!
 done
-sleep 1
-
-for pid in "${hpm_pids[@]}"; do
-    kill -s USR1 $pid
-done
+#Disable signal used to start hpm_counters for lab2
+#Consider removing the sleep below
+#sleep 1
+#
+#for pid in "${hpm_pids[@]}"; do
+#    kill -s USR1 $pid
+#done
