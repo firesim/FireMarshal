@@ -13,5 +13,5 @@ done
 sleep 1
 
 for pid in "${hpm_pids[@]}"; do
-    kill -USR1 $pid
+    kill -s USR1 $pid
 done
