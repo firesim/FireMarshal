@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
 else
     output_fname=$1
 fi
-output_dir=~/hpm_data
+output_dir=/hpm_data
 mkdir -p $output_dir
 num_harts=`grep -o 'hart' /proc/cpuinfo | wc -l`
 hpm_pids=()
