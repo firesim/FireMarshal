@@ -1,4 +1,4 @@
 #!/bin/bash
-killall hpm_counters
+pkill hpm_counters
 while pgrep hpm_counters > /dev/null; do sleep 1; done
 sync
