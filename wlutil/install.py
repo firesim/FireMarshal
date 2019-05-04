@@ -5,7 +5,10 @@ from pathlib import Path
 from .wlutil import *
 
 # firesim workloads directory
-fsWork = (Path(root_dir) / "../../deploy/workloads").resolve()
+try:
+    fsWork = (Path(root_dir) / "../../deploy/workloads").resolve()
+except:
+    fsWork = None
 
 readmeTxt="""This workload was generated using firesim-software. See the following config
 and workload directory for details:
