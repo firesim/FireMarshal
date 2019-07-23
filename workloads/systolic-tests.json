@@ -1,0 +1,6 @@
+{
+  "name" : "systolic-tests",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh"
+}

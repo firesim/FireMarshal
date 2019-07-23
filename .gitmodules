@@ -7,3 +7,6 @@
 [submodule "br/buildroot"]
 	path = wlutil/br/buildroot
 	url = https://git.buildroot.net/buildroot
+[submodule "workloads/systolic-tests/overlay/root/systolic-rocc-tests"]
+	path = workloads/systolic-tests/overlay/root/systolic-rocc-tests
+	url = https://github.com/vighneshiyer/systolic-rocc-tests.git
