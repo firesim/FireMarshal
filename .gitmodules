@@ -16,3 +16,7 @@
 [submodule "boards/firechip/drivers/iceblk-driver"]
 	path = boards/firechip/drivers/iceblk-driver
 	url = https://github.com/firesim/iceblk-driver.git
+[submodule "workloads/sha3/JohnTheRipper"]
+	path = workloads/sha3/JohnTheRipper
+	url = https://github.com/a0u/JohnTheRipper.git
+	branch = riscv

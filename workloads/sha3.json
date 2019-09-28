@@ -1,0 +1,6 @@
+{
+  "name" : "sha3",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh"
+}
