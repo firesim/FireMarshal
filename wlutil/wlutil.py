@@ -12,12 +12,20 @@ import errno
 import pathlib
 from contextlib import contextmanager
 
+#------------------------------------------------------------------------------
+# Root Directories:
+# wlutil_dir and root_dir are the two roots for wlutil, all other paths are
+# derived from these two values. They must work, even when FireMarshal/ is a symlink.
+#------------------------------------------------------------------------------
 # Root for wlutil library
 wlutil_dir = pathlib.Path(__file__).parent.resolve()
 
 # Root for firemarshal (e.g. firesim-software/)
-root_dir = os.getcwd()
+root_dir = pathlib.Path(sys.modules['__main__'].__file__).parent.resolve()
 
+#------------------------------------------------------------------------------
+# Derived Paths
+#------------------------------------------------------------------------------
 # Root for default board (platform-specific stuff)
 board_dir = pathlib.Path(root_dir) / 'boards' / 'firechip'
 
@@ -56,6 +64,26 @@ runName = ""
 
 # Useful for defining lists of files (e.g. 'files' part of config)
 FileSpec = collections.namedtuple('FileSpec', [ 'src', 'dst' ])
+
+def initialize():
+    """Get wlutil ready to use. Must be called at least once per installation.
+    Is safe and fast to call every time you load the library."""
+    log = logging.getLogger()
+
+    # Directories that must be initialized for disk-based initramfs
+    initramfs_disk_dirs = ["bin", 'dev', 'etc', 'proc', 'root', 'sbin', 'sys', 'usr/bin', 'usr/sbin', 'mnt/root']
+
+    # Setup disk initramfs dirs
+    for d in initramfs_disk_dirs:
+        if not (initramfs_dir / 'disk' / d).exists():
+            (initramfs_dir / 'disk' / d).mkdir(parents=True)
+
+    # Make busybox (needed for the initramfs)
+    if not (initramfs_dir /'disk' / 'bin' / 'busybox').exists():
+        log.info("Building busybox (used in initramfs)")
+        shutil.copy(wlutil_dir / 'busybox-config', busybox_dir / '.config')
+        run(['make', jlevel], cwd=busybox_dir)
+        shutil.copy(busybox_dir / 'busybox', initramfs_dir / 'disk' / 'bin/')
 
 # Create a unique run name. You can call this multiple times to reset internal
 # paths (e.g. for starting a logically different run). The run name controls
