@@ -14,6 +14,11 @@ CONFIG_RISCV_BASE_PMU=y
 CONFIG_RISCV_ISA_C=n
 
 #
+# Kernel features
+#
+CONFIG_RISCV_TIMEBASE_DIV=16
+
+#
 # Boot options
 #
 CONFIG_CMDLINE="console=hvc0 earlycon=sbi"
