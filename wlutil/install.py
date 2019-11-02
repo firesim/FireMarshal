@@ -6,7 +6,7 @@ from .wlutil import *
 
 # firesim workloads directory
 try:
-    fsWork = (Path(root_dir) / "../../deploy/workloads").resolve()
+    fsWork = (Path(root_dir) / "../../sims/firesim/deploy/workloads").resolve()
 except:
     fsWork = None
 
