@@ -2,10 +2,6 @@ import socket
 import logging
 from .wlutil import *
 
-# The amount of memory to use when launching
-launch_mem = "16384"
-launch_cores = "4"
-
 # Kinda hacky (technically not guaranteed to give a free port, just very likely)
 def get_free_tcp_port():
 	tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,19 +10,28 @@ def get_free_tcp_port():
 	tcp.close()
 	return str(port)
 
-# Returns a command string to luanch the given config in spike. Must be called with shell=True.
+# Returns a command string to launch the given config in spike. Must be called with shell=True.
 def getSpikeCmd(config, nodisk=False):
+
+    if 'img' in config and not nodisk:
+        raise ValueError("Spike does not support disk-based configurations")
+
     if 'spike' in config:
         spikeBin = config['spike']
     else:
         spikeBin = 'spike'
 
+    cmd = [spikeBin,
+           config.get('spike-args', ''),
+           ' -p' + str(config['cpus']),
+           ' -m' + str( int(config['mem'] / (1024*1024)) )]
+    
     if nodisk:
-        return spikeBin + " " + config.get('spike-args', '') + ' -p' + launch_cores + ' -m' + launch_mem + " " + config['bin'] + '-nodisk'
-    elif 'img' not in config:
-        return spikeBin + " " + config.get('spike-args', '') + ' -p' + launch_cores + ' -m' + launch_mem + " " + config['bin']
+        cmd.append(config['bin'] + '-nodisk')
     else:
-        raise ValueError("Spike does not support disk-based configurations")
+        cmd.append(config['bin'])
+
+    return " ".join(cmd)
 
 # Returns a command string to luanch the given config in qemu. Must be called with shell=True.
 def getQemuCmd(config, nodisk=False):
@@ -42,9 +47,9 @@ def getQemuCmd(config, nodisk=False):
     cmd = ['qemu-system-riscv64',
            '-nographic',
            '-bios none',
-           '-smp', launch_cores,
+           '-smp', str(config['cpus']),
            '-machine', 'virt',
-           '-m', launch_mem,
+           '-m', str( int(config['mem'] / (1024*1024)) ),
            '-kernel', exe,
            '-object', 'rng-random,filename=/dev/urandom,id=rng0',
            '-device', 'virtio-rng-device,rng=rng0',
@@ -57,7 +62,19 @@ def getQemuCmd(config, nodisk=False):
 
     return " ".join(cmd) + " " + config.get('qemu-args', '')
 
-def launchWorkload(cfgName, cfgs, job='all', spike=False):
+def launchWorkload(cfgName, cfgs, job='all', spike=False, interactive=True):
+    """Launches the specified workload in functional simulation.
+
+    cfgName: unique name of the workload in the cfgs
+    cfgs: initialized configuration (contains all possible workloads)
+    job: Which job to launch. 'all' launches the parent of all the jobs (i.e. the base workload).
+    spike: Use spike instead of the default qemu as the functional simulator
+    interactive: If true, the output from the simulator will be displayed to
+        stdout. If false, only the uartlog will be written (it is written live and
+        unbuffered so users can still 'tail' the output if they'd like).
+
+    Returns: Path of output directory
+    """
     log = logging.getLogger()
     baseConfig = cfgs[cfgName]
 
@@ -87,7 +104,15 @@ def launchWorkload(cfgName, cfgs, job='all', spike=False):
             cmd = getQemuCmd(config, config['nodisk'])
 
         log.info("Running: " + "".join(cmd))
-        sp.check_call(cmd + " | tee " + uartLog, shell=True)
+        if not interactive:
+            log.info("For live output see: " + uartLog)
+        with open(uartLog, 'wb', buffering=0) as uartF:
+            with sp.Popen(cmd.split(), stderr=sp.STDOUT, stdout=sp.PIPE) as p:
+                    for c in iter(lambda: p.stdout.read(1), b''):
+                        if interactive:
+                            sys.stdout.buffer.write(c)
+                            sys.stdout.flush()
+                        uartF.write(c)
 
         if 'outputs' in config:
             outputSpec = [ FileSpec(src=f, dst=runResDir + "/") for f in config['outputs']] 
@@ -101,8 +126,9 @@ def launchWorkload(cfgName, cfgs, job='all', spike=False):
                 log.info("\nRun output available in: " + os.path.dirname(runResDir))
                 raise RuntimeError("Post run hook failed:\n" + e.output)
 
-        log.info("\nRun output available in: " + os.path.dirname(runResDir))
+        return runResDir
     else:
         log.info("Workload launch skipped ('launch'=false in config)")
+        return None
 
 

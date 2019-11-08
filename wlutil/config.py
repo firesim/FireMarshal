@@ -7,6 +7,7 @@ import collections
 import json
 import pprint
 import logging
+import humanfriendly as hf
 from .wlutil import *
 import pathlib as pth
 
@@ -50,13 +51,22 @@ configUser = [
         # be relative to this (but converted to absolute when loaded)
         'workdir',
         # (bool) Should we launch this config? Defaults to 'true'. Mostly used for jobs.
-        'launch'
+        'launch',
+        # Size of root filesystem (human-readable string) 
+        'rootfs-size',
+        # Number of CPU cores to simulate (applies only to functional simulation). Converted to int after loading.
+        'cpus',
+        # Amount of memory (DRAM) to use when simulating (applies only to functional simulation).
+        # Can be standard size-formatted string from user (e.g. '4G'), but
+        # converted to bytes as int after loading.
+        'mem'
         ]
 
 # This is a comprehensive list of all options set during config parsing
 # (but not explicitly provided by the user)
 configDerived = [
         'img', # Path to output filesystem image
+        'img-sz', # Desired size of image in bytes (optional)
         'bin', # Path to output binary (e.g. bbl-vmlinux)
         'builder', # A handle to the base-distro object (e.g. br.Builder)
         'base-img', # The filesystem image to use when building this workload
@@ -64,7 +74,8 @@ configDerived = [
         'cfg-file', # Path to this workloads raw config file
         'distro', # Base linux distribution (either 'fedora' or 'br')
         'initramfs', # boolean: should we use an initramfs with this config?
-        'jobs' # After parsing, jobs is a collections.OrderedDict containing 'Config' objects for each job.
+        'jobs', # After parsing, jobs is a collections.OrderedDict containing 'Config' objects for each job.
+        'base-deps' # A list of tasks that this workload needs from its base (a potentially empty list)
         ]
 
 # These are the user-defined options that should be converted to absolute
@@ -86,13 +97,25 @@ configInherit = [
         'bin',
         'post_run_hook',
         'spike-args',
-        'qemu-args']
+        'rootfs-size',
+        'qemu-args',
+        'cpus',
+        'mem']
 
 # These are the permissible base-distributions to use (they get treated special)
 distros = {
         'fedora' : fed.Builder(),
         'br' : br.Builder(),
         'bare' : bare.Builder()
+        }
+
+# Default constants, may be overridden by the user
+# These take the post-processing form (e.g. if the user can provide a string,
+# but we convert it to an int, this would be an int)
+configDefaults = {
+        'img-sz' : 0, # default to 'tight' configuration
+        'mem' : hf.parse_size('16GiB'), # same as firesim default target
+        'cpus' : 4 # same as firesim default target
         }
 
 class RunSpec():
@@ -143,6 +166,8 @@ class Config(collections.MutableMapping):
             assert ( os.path.isabs(self.cfg['workdir'])), "'workdir' must be absolute for hard-coded configurations (i.e. those without a config file)"
 
         # Some default values
+        self.cfg['base-deps'] = []
+
         if 'workdir' in self.cfg:
             if not os.path.isabs(self.cfg['workdir']): 
                 self.cfg['workdir'] = os.path.join(cfgDir, self.cfg['workdir'])
@@ -159,6 +184,11 @@ class Config(collections.MutableMapping):
             if not os.path.isabs(self.cfg[k]):
                 self.cfg[k] = os.path.join(self.cfg['workdir'], self.cfg[k])
 
+        if 'rootfs-size' in self.cfg:
+            self.cfg['img-sz'] = hf.parse_size(str(self.cfg['rootfs-size']))
+        else:
+            self.cfg['img-sz'] = configDefaults['img-sz']
+
         # Convert files to namedtuple and expand source paths to absolute (dest is already absolute to rootfs) 
         if 'files' in self.cfg:
             fList = []
@@ -166,12 +196,6 @@ class Config(collections.MutableMapping):
                 fList.append(FileSpec(src=os.path.join(self.cfg['workdir'], f[0]), dst=f[1]))
 
             self.cfg['files'] = fList
-
-        # Distros are indexed by their name, not a path (since they don't have real configs)
-        # All other bases should converted to absolute paths
-        if 'base' in self.cfg:
-            if self.cfg['base'] not in distros and not os.path.isabs(self.cfg['base']):
-                self.cfg['base'] = os.path.join(cfgDir, self.cfg['base'])
         
         # This object handles setting up the 'run' and 'command' options
         if 'run' in self.cfg:
@@ -181,6 +205,16 @@ class Config(collections.MutableMapping):
 
         if 'guest-init' in self.cfg:
             self.cfg['guest-init'] = RunSpec(script=self.cfg['guest-init'])
+
+        if 'mem' in self.cfg:
+            self.cfg['mem'] = hf.parse_size(str(self.cfg['mem']))
+        else:
+            self.cfg['mem'] = configDefaults['mem']
+
+        if 'cpus' in self.cfg:
+            self.cfg['cpus'] = int(self.cfg['cpus'])
+        else:
+            self.cfg['cpus'] = configDefaults['cpus']
 
         # Convert jobs to standalone configs
         if 'jobs' in self.cfg:
@@ -197,7 +231,7 @@ class Config(collections.MutableMapping):
 
                 # jobs can base off any workload, but default to the current workload
                 if 'base' not in jCfg:
-                    jCfg['base'] = cfgFile
+                    jCfg['base'] = os.path.basename(cfgFile)
 
                 self.cfg['jobs'][jCfg['name']] = Config(cfgDict=jCfg)
             
@@ -212,16 +246,18 @@ class Config(collections.MutableMapping):
         # config will not generate a new image if it's base didn't
         if 'img' in baseCfg:
             self.cfg['base-img'] = baseCfg['img']
+            self.cfg['base-deps'].append(self.cfg['base-img'])
             self.cfg['img'] = os.path.join(image_dir, self.cfg['name'] + ".img")
+
+        if 'host-init' in baseCfg:
+            self.cfg['base-deps'].append(baseCfg['host-init'])
 
         if 'linux-src' not in self.cfg:
             self.cfg['linux-src'] = linux_dir
 
-        # if 'bin' not in self.cfg:
         # We inherit the parent's binary for bare-metal configs, but not linux configs
         # XXX This probably needs to be re-thought out. It's needed at least for including bare-metal binaries as a base for a job.
         if 'linux-config' in self.cfg or 'bin' not in self.cfg:
-        # if 'linux-config' in self.cfg:
             self.cfg['bin'] = os.path.join(image_dir, self.cfg['name'] + "-bin")
 
         # Some defaults need to occur, even if you don't have a base
@@ -286,19 +322,22 @@ class ConfigManager(collections.MutableMapping):
 
         # Read all the configs from their files
         for f in cfgPaths:
+            cfgName = os.path.basename(f)
             try:
                 log.debug("Loading " + f)
-                self.cfgs[f] = Config(f)
+                if cfgName in list(self.cfgs.keys()):
+                    log.warning("Workload " + f + " overrides " + self.cfgs[cfgName]['cfg-file'])
+                self.cfgs[cfgName] = Config(f)
             except KeyError as e:
                 log.warning("Skipping " + f + ":")
                 log.warning("\tMissing required option '" + e.args[0] + "'")
-                del self.cfgs[f]
+                del self.cfgs[cfgName]
                 # raise
                 continue
             except Exception as e:
                 log.warning("Skipping " + f + ": Unable to parse config:")
                 log.warning("\t" + repr(e))
-                del self.cfgs[f]
+                del self.cfgs[cfgName]
                 raise
                 continue
 

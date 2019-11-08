@@ -3,9 +3,26 @@
 shopt -s extglob
 
 SUITE_PASS=true
-LOGNAME=$(mktemp results_full_test.XXXX)
+LOGNAME=$(realpath $(mktemp results_full_test.XXXX))
 
 echo "Running Full Test. Results available in $LOGNAME"
+
+# These tests need to run on spike, but not with the no-disk option
+echo "Running bare-metal tests" | tee -a $LOGNAME
+IS_INCLUDE="@(bare|dummy-bare|spike|spike-jobs|spike-args|rocc)"
+./marshal clean test/$IS_INCLUDE.json | tee -a $LOGNAME
+# This is a temporary workaround for bug #38
+./marshal build test/spike.json
+./marshal test -s test/$IS_INCLUDE.json | tee -a $LOGNAME
+if [ ${PIPESTATUS[0]} != 0 ]; then
+  echo "Failure" | tee -a $LOGNAME
+  SUITE_PASS=false
+else
+  echo "Success" | tee -a $LOGNAME
+fi
+
+echo "Initializing submodules for linux-based tests" | tee -a $LOGNAME
+./init-submodules.sh | tee -a $LOGNAME
 
 # We pre-build to avoid potential timeouts on a fresh clone
 echo "Pre-building base workloads" | tee -a $LOGNAME
@@ -15,7 +32,6 @@ echo "Pre-building base workloads" | tee -a $LOGNAME
 echo "Running launch timeout test (should timeout):" | tee -a $LOGNAME
 echo "This test will reset your terminal"
 ./marshal test test/timeout-run.json | grep "timeout while running"
-# Note: This records the 
 res=${PIPESTATUS[1]}
 reset
 echo "Ran launch timeout test (screen was reset)"
@@ -50,24 +66,10 @@ else
   echo "Success" | tee -a $LOGNAME
 fi
 
-# These tests need to run on spike, but not with the no-disk option
-echo "Running bare-metal tests" | tee -a $LOGNAME
-IS_INCLUDE="@(bare|dummy-bare|spike|spike-jobs|spike-args|rocc)"
-./marshal clean test/$IS_INCLUDE.json | tee -a $LOGNAME
-# This is a temporary workaround for bug #38
-./marshal build test/spike.json
-./marshal test -s test/$IS_INCLUDE.json | tee -a $LOGNAME
-if [ ${PIPESTATUS[0]} != 0 ]; then
-  echo "Failure" | tee -a $LOGNAME
-  SUITE_PASS=false
-else
-  echo "Success" | tee -a $LOGNAME
-fi
-
 # Run the no-disk versions on spike, no-disk runs have many restrictions,
 # we only run a few tests here to test basic capabilities
 echo "Running no-disk capable tests on spike" | tee -a $LOGNAME
-IS_INCLUDE="@(command|flist|host-init|jobs|linux-src|overlay|post-run-hook|run|smoke0)"
+IS_INCLUDE="@(command|flist|host-init|jobs|linux-src|overlay|post-run-hook|run|smoke0|simArgs)"
 ./marshal -d clean test/$IS_INCLUDE.json | tee -a $LOGNAME
 ./marshal -d test -s test/$IS_INCLUDE.json | tee -a $LOGNAME
 if [ ${PIPESTATUS[0]} != 0 ]; then
@@ -101,6 +103,27 @@ if [ ${PIPESTATUS[0]} != 0 ]; then
   SUITE_PASS=false
   exit 1
 fi
+
+# Ensures that marshal can be called from different PWDs
+echo "Running different PWD test" | tee -a $LOGNAME
+pushd test/sameWorkdir
+../../marshal test sameDir.json | tee -a $LOGNAME
+if [ ${PIPESTATUS[0]} != 0 ]; then
+  echo "Failure" | tee -a $LOGNAME
+  SUITE_PASS=false
+  exit 1
+fi
+popd
+
+echo "Running fsSize test" | tee -a $LOGNAME
+pushd test/fsSize
+./test.sh >> $LOGNAME
+if [ ${PIPESTATUS[0]} != 0 ]; then
+  echo "Failure" | tee -a $LOGNAME
+  SUITE_PASS=false
+  exit 1
+fi
+popd
 
 echo -e "\n\nMarshal full test complete. Log at: $LOGNAME"
 if [ $SUITE_PASS = false ]; then
