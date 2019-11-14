@@ -63,7 +63,7 @@ def addDep(loader, config):
     bin_task_deps = [] + hostInit + config['base-deps']
     if 'linux-config' in config:
         bin_file_deps.append(config['linux-config'])
-        bin_task_deps.append('_busybox')
+        bin_task_deps.append('BuildBusybox')
     
     if 'bin' in config:
         loader.addTask({
@@ -135,7 +135,7 @@ def buildDepGraph(cfgs):
 
     # Linux-based workloads depend on this task
     loader.workloads.append({
-        'name' : '_busybox',
+        'name' : 'BuildBusybox',
         'actions' : [(buildBusybox, [])],
         'targets' : [initramfs_dir /'disk' / 'bin' / 'busybox'],
         'uptodate': [config_changed(checkGitStatus(busybox_dir)),
@@ -200,7 +200,6 @@ def buildWorkload(cfgName, cfgs, buildBin=True, buildImg=True):
 
     # The order isn't critical here, we should have defined the dependencies correctly in loader 
     return doit.doit_cmd.DoitMain(taskLoader).run(binList + imgList)
-    # return doit.doit_cmd.DoitMain(taskLoader).run(["info", "/data/repos/fm2/images/smoke0-bin"])
 
 def makeInitramfs(srcs, cpioDir, includeDevNodes=False):
     """Generate a cpio archive containing each of the sources and store it in cpioDir.

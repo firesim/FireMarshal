@@ -78,19 +78,30 @@ rootfsMargin = 256*(1024*1024)
 # Useful for defining lists of files (e.g. 'files' part of config)
 FileSpec = collections.namedtuple('FileSpec', [ 'src', 'dst' ])
 
+# List of marshal submodules (those enabled by init-submodules.sh)
+marshalSubmods = [
+        linux_dir,
+        pk_dir,
+        busybox_dir,
+        wlutil_dir / 'br' / 'buildroot'] + \
+        list(board_dir.glob("drivers/*"))
+        
 class SubmoduleError(Exception):
     """Error representing a nonexistent or uninitialized submodule"""
     def __init__(self, path):
-        self.message = "Dependency missing or not initialized " + \
-                str(path) + \
-                ". Do you need to initialize submodules?"
         self.path = path
 
     def __repr__(self):
-        return "Submodule Error: \n" + self.message
+        return 'Submodule Error: ' + self.__str__()
 
     def __str__(self):
-        return self.__repr__()
+        if self.path in marshalSubmods:
+            return 'Marshal submodule "' + str(self.path) + \
+                    '" not initialized. Please run "./init-submodules.sh."'
+        else:
+            return "Dependency missing or not initialized " + \
+                    str(self.path) + \
+                    ". Do you need to initialize a submodule?"
 
 class RootfsCapacityError(Exception):
     """Error representing that the workload's rootfs has run out of disk space."""
@@ -322,32 +333,37 @@ def copyImgFiles(img, files, direction):
             else:
                 raise ValueError("direction option must be either 'in' or 'out'")
 
+_toolVersions = None
 def getToolVersions():
     """Detect version information for the currently enabled toolchain."""
 
-    # We run the preprocessor on a simple program to see the C-visible
-    # "LINUX_VERSION_CODE" macro
-    linuxHeaderTest = """#include <linux/version.h>
-    LINUX_VERSION_CODE
-    """
-    linuxHeaderVer = sp.run(['riscv64-unknown-linux-gnu-gcc', '-E', '-xc', '-'],
-              input=linuxHeaderTest, stdout=sp.PIPE, universal_newlines=True)
-    linuxHeaderVer = linuxHeaderVer.stdout.splitlines()[-1].strip()
+    global _toolVersions
+    if _toolVersions is None:
+        # We run the preprocessor on a simple program to see the C-visible
+        # "LINUX_VERSION_CODE" macro
+        linuxHeaderTest = """#include <linux/version.h>
+        LINUX_VERSION_CODE
+        """
+        linuxHeaderVer = sp.run(['riscv64-unknown-linux-gnu-gcc', '-E', '-xc', '-'],
+                  input=linuxHeaderTest, stdout=sp.PIPE, universal_newlines=True)
+        linuxHeaderVer = linuxHeaderVer.stdout.splitlines()[-1].strip()
 
-    # Major/minor version of the linux kernel headers included with our
-    # toolchain. This is not necessarily the same as the linux kernel used by
-    # Marshal, but is assumed to be <= to the version actually used.
-    linuxMaj = str(int(linuxHeaderVer) >> 16)
-    linuxMin = str((int(linuxHeaderVer) >> 8) & 0xFF)
+        # Major/minor version of the linux kernel headers included with our
+        # toolchain. This is not necessarily the same as the linux kernel used by
+        # Marshal, but is assumed to be <= to the version actually used.
+        linuxMaj = str(int(linuxHeaderVer) >> 16)
+        linuxMin = str((int(linuxHeaderVer) >> 8) & 0xFF)
 
-    # Toolchain major version
-    toolVerStr = sp.run(["riscv64-unknown-linux-gnu-gcc", "--version"],
-            universal_newlines=True, stdout=sp.PIPE).stdout
-    toolVer = toolVerStr[36]
+        # Toolchain major version
+        toolVerStr = sp.run(["riscv64-unknown-linux-gnu-gcc", "--version"],
+                universal_newlines=True, stdout=sp.PIPE).stdout
+        toolVer = toolVerStr[36]
 
-    return {'linuxMaj' : linuxMaj,
-            'linuxMin' : linuxMin,
-            'gcc' : toolVer}
+        _toolVersions = {'linuxMaj' : linuxMaj,
+                'linuxMin' : linuxMin,
+                'gcc' : toolVer}
+
+    return _toolVersions
 
 def checkGitStatus(submodule):
     """Returns a dictionary representing the status of a git repo.
