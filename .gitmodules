@@ -25,3 +25,6 @@
 [submodule "boards/firechip/drivers/remote-mem-driver"]
 	path = boards/firechip/drivers/remote-mem-driver
 	url = git@bitbucket.org:zhemao/remote-mem-driver.git
+[submodule "boards/firechip/drivers/prefetch-middleman-driver"]
+	path = boards/firechip/drivers/prefetch-middleman-driver
+	url = git@bitbucket.org:zhemao/prefetch-middleman-driver.git
