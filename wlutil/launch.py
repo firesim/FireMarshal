@@ -47,7 +47,7 @@ def getQemuCmd(config, nodisk=False):
     if 'qemu' in config:
         qemuBin = str(config['qemu'])
     else:
-        qemuBin = 'qemu-system-riscv64'
+        qemuBin = shutil.which('qemu-system-riscv64')
 
     cmd = [qemuBin,
            '-nographic',
@@ -56,10 +56,20 @@ def getQemuCmd(config, nodisk=False):
            '-machine', 'virt',
            '-m', str( int(config['mem'] / (1024*1024)) ),
            '-kernel', exe,
-           '-object', 'rng-random,filename=/dev/urandom,id=rng0',
-           '-device', 'virtio-rng-device,rng=rng0',
-           '-device', 'virtio-net-device,netdev=usernet',
-           '-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
+           '-object', 'rng-random,filename=/dev/urandom,id=rng0']
+
+    # Use tap device if sudo available (better performance and allows for
+    # cluster mode. User networking works without sudo and gives basic internet
+    # access, but is slower and doesn't support networking between jobs.
+    if sudoCmd != []:
+        cmd = sudoCmd + cmd + ['-netdev', ' tap,id=tapnet,ifname=tap2,script=no,downscript=no',
+           '-device' ,  'virtio-net-device,netdev=tapnet']
+        # cmd = sudoCmd + cmd + ['-netdev', 'bridge,id=bridge1', '-device', 'virtio-net-device,netdev=bridge1']
+    else:
+        # In theory, forwarding to port 22 should allow ssh into the target. I
+        # can't get it to work though.
+        cmd += ['-device', 'virtio-net-device,netdev=usernet',
+                '-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
 
     if 'img' in config and not nodisk:
         cmd = cmd + ['-device', 'virtio-blk-device,drive=hd0',
