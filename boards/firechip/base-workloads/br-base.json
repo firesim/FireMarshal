@@ -2,5 +2,6 @@
   "name" : "br-base",
   "base" : "br",
   "overlay" : "overlay",
-  "linux-config" : "linux-config"
+  "linux-config" : "linux-config",
+  "spike-args" : "--extension=hwacha"
 }
