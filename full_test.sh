@@ -12,6 +12,7 @@ echo "Running Full Test. Results available in $LOGNAME"
 #==============================================================================
 # We're ignoring style for now, although it might be a good idea to spot check
 # from time to time.
+echo "Linting code (available in $LOGNAME.lint)" | tee -a $LOGNAME
 pylint --disable=W0614 --disable=C --disable=R marshal > $LOGNAME.lint
 pylint --disable=W0614 --disable=C --disable=R wlutil >> $LOGNAME.lint
 
