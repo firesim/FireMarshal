@@ -3,3 +3,5 @@ doit
 gitpython
 humanfriendly
 PyYAML
+# Only needed for testing
+pylint

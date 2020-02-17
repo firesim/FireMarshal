@@ -7,6 +7,17 @@ LOGNAME=$(realpath $(mktemp results_full_test.XXXX))
 
 echo "Running Full Test. Results available in $LOGNAME"
 
+#==============================================================================
+# Linting
+#==============================================================================
+# We're ignoring style for now, although it might be a good idea to spot check
+# from time to time.
+pylint --disable=W0614 --disable=C --disable=R marshal > $LOGNAME.lint
+pylint --disable=W0614 --disable=C --disable=R wlutil >> $LOGNAME.lint
+
+#==============================================================================
+# Tests that don't require init-submodules.sh
+#==============================================================================
 # These tests need to run on spike, but not with the no-disk option
 echo "Running bare-metal tests" | tee -a $LOGNAME
 IS_INCLUDE="@(bare|dummy-bare|spike|spike-jobs|spike-args|rocc)"
@@ -22,6 +33,10 @@ else
 fi
 echo ""
 
+#==============================================================================
+# Setup submodules and prepare for bulk tests (includes timeout test to make
+# sure the bulk tests don't hang forever).
+#==============================================================================
 echo "Initializing submodules for linux-based tests" | tee -a $LOGNAME
 ./init-submodules.sh | tee -a $LOGNAME
 echo ""
@@ -56,6 +71,10 @@ else
 fi
 echo ""
 
+#==============================================================================
+# Bulk tests
+#==============================================================================
+
 # Run the bulk tests (all work with the 'test' command)
 # Note the funny extended globbing, these are just lists of tests that
 # shouldn't be tested (e.g. we exclude the base configs and some specialized
@@ -86,10 +105,12 @@ else
 fi
 echo ""
 
+#==============================================================================
 # Run the specialized tests (tests that are too complicated for ./marshal
 # test)
+#==============================================================================
 echo "Running clean test" | tee -a $LOGNAME
-./test/clean/test.py >> $LOGNAME 
+/test/clean/test.py >> $LOGNAME 
 if [ ${PIPESTATUS[0]} != 0 ]; then
   echo "Failure" | tee -a $LOGNAME
   SUITE_PASS=false
