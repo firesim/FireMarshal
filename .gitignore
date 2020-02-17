@@ -8,3 +8,4 @@ wlutil/fedora/rootfs.img.xz
 *__pycache__
 .doit.db*
 marshal-config.yaml
+results_full_test.*
