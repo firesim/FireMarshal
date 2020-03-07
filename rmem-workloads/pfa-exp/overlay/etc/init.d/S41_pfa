@@ -1,0 +1,18 @@
+#!/bin/bash
+
+case "$1" in
+  start)
+    # Initialize system-level stuff for PFA (cgroups, swap devices etc) 
+    pushd /root
+    ./init.sh
+    popd
+  ;;
+  stop)
+	;;
+  restart)
+  ;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+

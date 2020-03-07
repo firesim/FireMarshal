@@ -1,0 +1,12 @@
+#!/bin/sh
+echo $$ > /sys/kernel/mm/pfa_stat
+
+# Experiments run on core 1. This works best if the kernel cmdline includes
+# isolcpus=1
+taskset -p 0x2 $$
+
+if [ -f /sys/kernel/mm/pfa_tsk ]; then
+  echo $$ > /sys/kernel/mm/pfa_tsk
+fi
+
+exec run_cg $@

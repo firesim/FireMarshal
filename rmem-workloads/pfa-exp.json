@@ -1,0 +1,7 @@
+{
+  "name" : "pfa-exp",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  "linux-config" : "pfa-exp-kfrag",
+  "host-init" : "build.sh"
+}

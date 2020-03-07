@@ -28,3 +28,6 @@
 [submodule "boards/firechip/drivers/prefetch-middleman-driver"]
 	path = boards/firechip/drivers/prefetch-middleman-driver
 	url = git@bitbucket.org:zhemao/prefetch-middleman-driver.git
+[submodule "boards/firechip/drivers/rswap-driver"]
+	path = boards/firechip/drivers/rswap-driver
+	url = git@bitbucket.org:zhemao/rswap-driver.git

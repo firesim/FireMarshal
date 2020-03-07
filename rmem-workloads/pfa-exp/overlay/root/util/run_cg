@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo $$ > /sys/fs/cgroup/pfa/cgroup.procs
+exec $@

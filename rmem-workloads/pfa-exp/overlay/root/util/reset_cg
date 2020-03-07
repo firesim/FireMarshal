@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ -d /sys/fs/cgroup/pfa ]; then
+  rmdir /sys/fs/cgroup/pfa
+fi
+
+mkdir /sys/fs/cgroup/pfa
+if [ $# == 1 ]; then
+  echo "Setting cgroup memory cap: $1" 
+  echo $1 > /sys/fs/cgroup/pfa/memory.max
+fi
+echo "Memory limit:"
+cat /sys/fs/cgroup/pfa/memory.max
