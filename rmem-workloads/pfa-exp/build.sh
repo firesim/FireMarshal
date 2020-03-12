@@ -2,7 +2,14 @@
 
 rootdir=overlay/root
 
+build_benchmark () {
+    make -C $rootdir/benchmarks/$1 clean
+    make -C $rootdir/benchmarks/$1 CROSS=riscv
+}
+
+make -C $rootdir/util clean
 make -C $rootdir/util
-make -C $rootdir/benchmarks/genome
-make -C $rootdir/benchmarks/qsort CROSS=riscv
-make -C $rootdir/benchmarks/unit
+
+build_benchmark genome
+build_benchmark qsort
+build_benchmark unit
