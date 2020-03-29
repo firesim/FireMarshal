@@ -68,7 +68,7 @@ class ConfigurationError(Exception):
         self.cause = cause
 
     def __str__(self):
-        return "Configuration Error: " + cause
+        return "Configuration Error: " + self.cause
 
 class ConfigurationOptionError(ConfigurationError):
     """Error representing a problem with marshal configuration."""
@@ -99,13 +99,14 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
         'board-dir',
         'image-dir',
         'linux-dir',
+        'firesim-dir',
         'pk-dir',
         'log-dir',
         'res-dir'
     ]
 
     for opt in pathOpts:
-        if opt in opts:
+        if opt in opts and opts[opt] is not None:
             try:
                 path = (baseDir / pathlib.Path(opts[opt])).resolve(strict=True)
                 opts[opt] = path
@@ -119,6 +120,7 @@ userOpts = [
         'board-dir',
         'image-dir',
         'linux-dir',
+        'firesim-dir',
         'pk-dir',
         'log-dir',
         'res-dir',
@@ -273,7 +275,7 @@ class marshalCtx(collections.MutableMapping):
         self['run-name'] = ""
         self['rootfs-margin'] = humanfriendly.parse_size(str(self['rootfs-margin']))
         self['jlevel'] = '-j' + str(self['jlevel'])
-        self['driver-dirs'] = self['board-dir'].glob('drivers/*')
+        self['driver-dirs'] = list(self['board-dir'].glob('drivers/*'))
         self['buildroot-dir'] = self['wlutil-dir'] / 'br' / 'buildroot'
 
         if self['doitOpts']['dep_file'] == '':
@@ -691,5 +693,9 @@ class config_changed(object):
             return False
         return (last_success == self.config_digest)
 
+def appendPath(basepath, appendval):
+    return basepath.parent / (basepath.name + appendval)
+
 def noDiskPath(path):
-    return path.parent / (path.name + '-nodisk')
+    return appendPath(path, '-nodisk')
+

@@ -60,15 +60,22 @@ def addDep(loader, config):
     # Add a rule for the binary
     bin_file_deps = []
     bin_task_deps = [] + hostInit + config['base-deps']
+    bin_targets = []
     if 'linux-config' in config:
         bin_file_deps.append(config['linux-config'])
         bin_task_deps.append('BuildBusybox')
+        bin_targets.append(config['dwarf'])
     
     if 'bin' in config:
+        if 'dwarf' in config:
+            targets = [str(config['bin']), str(config['dwarf'])]
+        else:
+            targets = [str(config['bin'])]
+
         loader.addTask({
                 'name' : str(config['bin']),
                 'actions' : [(makeBin, [config])],
-                'targets' : [str(config['bin'])],
+                'targets' : targets,
                 'file_dep': bin_file_deps,
                 'task_dep' : bin_task_deps,
                 'uptodate' : [config_changed(checkGitStatus(config.get('linux-src'))),
@@ -83,10 +90,15 @@ def addDep(loader, config):
             nodisk_file_deps.append(config['img'])
             nodisk_task_deps.append(str(config['img']))
 
+        if 'dwarf' in config:
+            targets = [str(noDiskPath(config['bin'])), str(noDiskPath(config['dwarf']))]
+        else:
+            targets = [str(noDiskPath(config['bin']))]
+
         loader.addTask({
                 'name' : str(noDiskPath(config['bin'])),
                 'actions' : [(makeBin, [config], {'nodisk' : True})],
-                'targets' : [str(noDiskPath(config['bin']))],
+                'targets' : targets,
                 'file_dep': nodisk_file_deps,
                 'task_dep' : nodisk_task_deps,
                 'uptodate' : [config_changed(checkGitStatus(config.get('linux-src'))),
@@ -267,7 +279,7 @@ def makeDrivers(kfrags, boardDir, linuxSrc):
     # Prepare the linux source for building external drivers
     generateKConfig(kfrags, linuxSrc)
     run(["make", "ARCH=riscv", "CROSS_COMPILE=riscv64-unknown-linux-gnu-", "modules_prepare", getOpt('jlevel')], cwd=linuxSrc)
-    kernelVersion = sp.run(["make", "ARCH=riscv", "kernelrelease"], cwd=linuxSrc, stdout=sp.PIPE, universal_newlines=True).stdout.strip()
+    kernelVersion = sp.run(["make", "-s", "ARCH=riscv", "kernelrelease"], cwd=linuxSrc, stdout=sp.PIPE, universal_newlines=True).stdout.strip()
 
     drivers = []
     for driverDir in getOpt('driver-dirs'):
@@ -282,7 +294,7 @@ def makeDrivers(kfrags, boardDir, linuxSrc):
 
     # Always start from a clean slate
     try:
-        shutil.rmtree(driverDir)
+        shutil.rmtree(driverDir.parent)
     except FileNotFoundError:
         pass
     driverDir.mkdir(parents=True)
@@ -293,7 +305,6 @@ def makeDrivers(kfrags, boardDir, linuxSrc):
 
     # Setup the dependency file needed by modprobe to load the drivers
     run(['depmod', '-b', str(getOpt('initramfs-dir') / "drivers"), kernelVersion])
-
 
 def makeBin(config, nodisk=False):
     """Build the binary specified in 'config'.
@@ -347,8 +358,10 @@ def makeBin(config, nodisk=False):
 
         if nodisk:
             shutil.copy(pk_build / 'bbl', noDiskPath(config['bin']))
+            shutil.copy(config['linux-src'] / 'vmlinux', noDiskPath(config['dwarf']))
         else:
             shutil.copy(pk_build / 'bbl', config['bin'])
+            shutil.copy(config['linux-src'] / 'vmlinux', config['dwarf'])
 
     return True
 
@@ -363,13 +376,6 @@ def makeImage(config):
     # Resize if needed
     if config['img-sz'] != 0:
         resizeFS(config['img'], config['img-sz'])
-
-    # Convert overlay to file list
-    if 'overlay' in config:
-        config.setdefault('files', [])
-        files = config['overlay'].glob('*')
-        for f in files:
-            config['files'].append(FileSpec(src=f, dst=pathlib.Path('/')))
 
     if 'files' in config:
         log.info("Applying file list: " + str(config['files']))
