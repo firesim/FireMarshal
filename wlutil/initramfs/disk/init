@@ -1,7 +1,7 @@
 #!/bin/busybox sh
 
 _setup_rootfs() {
-  for blk in iceblk vda ; do
+  for blk in iceblk0 vda ; do
     if test -b "/dev/${blk}" ; then
       echo "Mounting /dev/${blk} as root device"
       mount -o ro "/dev/${blk}" /mnt/root
