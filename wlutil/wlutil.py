@@ -102,14 +102,25 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
         'firesim-dir',
         'pk-dir',
         'log-dir',
-        'res-dir'
+        'res-dir',
+        'workload-dirs'
     ]
+
+    def clean(path):
+        return (baseDir / pathlib.Path(path)).resolve(strict=True)
 
     for opt in pathOpts:
         if opt in opts and opts[opt] is not None:
             try:
-                path = (baseDir / pathlib.Path(opts[opt])).resolve(strict=True)
-                opts[opt] = path
+                if isinstance(opts[opt], str):
+                    # Scalar path
+                    opts[opt] = clean(opts[opt])
+                else:
+                    # List of paths
+                    cleanedPaths = []
+                    for p in opts[opt]:
+                        cleanedPaths.append(clean(p))
+                    opts[opt] = cleanedPaths
             except Exception as e:
                 raise ConfigurationOptionError(opt, "Invalid path: " + str(e))
 
@@ -117,6 +128,7 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
 # environment or config files). See default-config.yaml or the documentation
 # for the meaning of these options.
 userOpts = [
+        'workload-dirs',
         'board-dir',
         'image-dir',
         'linux-dir',
@@ -163,7 +175,10 @@ derivedOpts = [
         'driver-dirs',
 
         # Buildroot source directory
-        'buildroot-dir'
+        'buildroot-dir',
+
+        # Arguments to pass when calling make on linux
+        'linux-make-args'
         ]
 
 class marshalCtx(collections.MutableMapping):
@@ -277,6 +292,7 @@ class marshalCtx(collections.MutableMapping):
         self['jlevel'] = '-j' + str(self['jlevel'])
         self['driver-dirs'] = list(self['board-dir'].glob('drivers/*'))
         self['buildroot-dir'] = self['wlutil-dir'] / 'br' / 'buildroot'
+        self['linux-make-args'] = ["ARCH=riscv", "CROSS_COMPILE=riscv64-unknown-linux-gnu-"]
 
         if self['doitOpts']['dep_file'] == '':
             self['doitOpts']['dep_file'] = str(self['gen-dir'] / 'marshaldb')
