@@ -58,6 +58,53 @@ def handlePostBin(config, linuxBin):
 
        run([config['post-bin'].path] + config['post-bin'].args, env=postbinEnv, cwd=config['workdir'])
 
+
+def submoduleDepsTask(submodules, name=""):
+    """Returns a calc_dep task for doit to check if submodule is up to date.
+    Packaging this in a calc_dep task avoids unnecessary checking that can be
+    slow."""
+    def submoduleDeps(submodules):
+        return { 'uptodate' : [ config_changed(checkGitStatus(sub)) for sub in submodules ] }
+
+    return  {
+              'name' : name,
+              'actions' : [ (submoduleDeps, [ submodules ]) ]
+            }
+
+
+def fileDepsTask(name, taskDeps=None, overlay=None, files=None):
+    """Returns a task dict for a calc_dep task that calculates the file
+    dependencies representd by an overlay and/or a list of FileSpec objects.
+    Either can be None.
+    
+    taskDeps should be a list of names of tasks that must run before
+    calculating dependencies (e.g. host-init)"""
+
+    def fileDeps(overlay, files):
+        """The python-action for the filedeps task, returns a dictionary of dependencies"""
+        deps = []
+        if overlay is not None:
+            deps.append(overlay)
+
+        if files is not None:
+            deps += [ f.src for f in files if not f.src.is_symlink() ]
+
+        for dep in deps.copy():
+            if dep.is_dir():
+                deps += [ child for child in dep.glob('**/*') ]
+
+        return { 'file_dep' : [ str(f) for f in deps if not f.is_dir() ] }
+
+    task = {
+            'name' : 'calc_' + name + '_dep',
+            'actions' : [ (fileDeps, [overlay, files]) ],
+    }
+    if taskDeps is not None:
+        task['task_dep'] = taskDeps
+
+    return task
+
+
 def addDep(loader, config):
     """Adds 'config' to the doit dependency graph ('loader')"""
 
@@ -87,14 +134,20 @@ def addDep(loader, config):
         else:
             targets = [str(config['bin'])]
 
+        bin_calc_dep_tsk = submoduleDepsTask([config.get('linux-src'),
+            config.get('pk-src'),
+            config.get('firmware-src')],
+            name="_submodule_deps_"+config['name'])
+
+        loader.addTask(bin_calc_dep_tsk)
+
         loader.addTask({
                 'name' : str(config['bin']),
                 'actions' : [(makeBin, [config])],
                 'targets' : targets,
                 'file_dep': bin_file_deps,
                 'task_dep' : bin_task_deps,
-                'uptodate' : [config_changed(checkGitStatus(config.get('linux-src'))),
-                    config_changed(checkGitStatus(config.get('pk-src')))]
+                'calc_dep' : [bin_calc_dep_tsk['name']]
                 })
         diskBin = [str(config['bin'])]
 
@@ -119,7 +172,7 @@ def addDep(loader, config):
                 'file_dep': nodisk_file_deps,
                 'task_dep' : nodisk_task_deps,
                 'uptodate' : [config_changed(checkGitStatus(config.get('linux-src'))),
-                    config_changed(checkGitStatus(config.get('pk-src')))]
+                    config_changed(checkGitStatus(config.get('firmware-src')))]
                 })
         nodiskBin = [str(noDiskPath(config['bin']))]
 
@@ -138,21 +191,15 @@ def addDep(loader, config):
     # Add a rule for the image (if any)
     img_file_deps = []
     img_task_deps = [] + hostInit + postBin + config['base-deps']
+    img_calc_deps = []
     if 'img' in config:
-        if 'files' in config:
-            for fSpec in config['files']:
-                # Add directories recursively
-                if fSpec.src.is_dir():
-                    for root, dirs, files in os.walk(fSpec.src):
-                        for f in files:
-                            fdep = os.path.join(root, f)
-                            # Ignore symlinks
-                            if not os.path.islink(fdep):
-                                img_file_deps.append(fdep)
-                else:
-                    # Ignore symlinks
-                    if not os.path.islink(fSpec.src):
-                        img_file_deps.append(fSpec.src)
+        if 'files' in config or 'overlay' in config:
+            # We delay calculation of files and overlay dependencies to runtime
+            # in order to catch any generated inputs
+            fdepsTask = fileDepsTask(config['name'], taskDeps=img_task_deps,
+                overlay=config.get('overlay'), files=config.get('files'))
+            img_calc_deps.append(fdepsTask['name'])
+            loader.addTask(fdepsTask)
         if 'guest-init' in config:
             img_file_deps.append(config['guest-init'].path)
             img_task_deps.append(str(config['bin']))
@@ -166,7 +213,8 @@ def addDep(loader, config):
             'actions' : [(makeImage, [config])],
             'targets' : [config['img']],
             'file_dep' : img_file_deps,
-            'task_dep' : img_task_deps
+            'task_dep' : img_task_deps,
+            'calc_dep' : img_calc_deps
             })
 
 # Generate a task-graph loader for the doit "Run" command
@@ -239,8 +287,10 @@ def buildWorkload(cfgName, cfgs, buildBin=True, buildImg=True):
             if 'img' in jCfg and buildImg:
                 imgList.append(jCfg['img'])
 
+    opts = {**getOpt('doitOpts'), **{'check_file_uptodate': WithMetadataChecker}}
+    doitHandle = doit.doit_cmd.DoitMain(taskLoader, extra_config={'run': opts})
+
     # The order isn't critical here, we should have defined the dependencies correctly in loader
-    doitHandle = doit.doit_cmd.DoitMain(taskLoader, extra_config={'run': getOpt('doitOpts')})
     return doitHandle.run([str(p) for p in binList + imgList])
 
 def makeInitramfs(srcs, cpioDir, includeDevNodes=False):
@@ -337,6 +387,38 @@ def makeDrivers(kfrags, boardDir, linuxSrc):
     # Setup the dependency file needed by modprobe to load the drivers
     run(['depmod', '-b', str(getOpt('initramfs-dir') / "drivers"), kernelVersion])
 
+
+def makeBBL(config, nodisk=False):
+    # BBL doesn't seem to detect changes in its configuration and won't rebuild if the payload path changes
+    bblBuild = config['bbl-src'] / 'build'
+    if bblBuild.exists():
+        shutil.rmtree(bblBuild)
+    bblBuild.mkdir()
+
+    run(['../configure', '--host=riscv64-unknown-elf',
+        '--with-payload=' + str(config['linux-src'] / 'vmlinux')], cwd=bblBuild)
+    run(['make', getOpt('jlevel')], cwd=bblBuild)
+
+    return bblBuild / 'bbl'
+
+
+def makeOpenSBI(config, nodisk=False):
+    payload = config['linux-src'] / 'arch' / 'riscv' / 'boot' / 'Image'
+    # Align to next MiB
+    payloadSize = ((payload.stat().st_size + 0xfffff) // 0x100000) * 0x100000
+
+    run(['make'] + 
+        getOpt('linux-make-args') +
+        ['PLATFORM=generic',
+         'FW_PAYLOAD_PATH=' + str(payload),
+         'FW_PAYLOAD_FDT_ADDR=0x$(shell printf "%X" '
+            '$$(( $(FW_TEXT_START) + $(FW_PAYLOAD_OFFSET) + ' + hex(payloadSize) + ' )))'],
+        cwd=config['opensbi-src']
+        )
+
+    return config['opensbi-src'] / 'build' / 'platform' / 'generic' / 'firmware' / 'fw_payload.elf'
+
+
 def makeBin(config, nodisk=False):
     """Build the binary specified in 'config'.
 
@@ -352,7 +434,8 @@ def makeBin(config, nodisk=False):
         # Some submodules are only needed if building Linux
         try:
             checkSubmodule(config['linux-src'])
-            checkSubmodule(config['pk-src'])
+            checkSubmodule(config['firmware-src'])
+
             makeDrivers(config['linux-config'], getOpt('board-dir'), config['linux-src'])
         except SubmoduleError as err:
             return doit.exceptions.TaskFailed(err)
@@ -373,23 +456,18 @@ def makeBin(config, nodisk=False):
 
             makeInitramfsKfrag(initramfsPath, cpioDir / "initramfs.kfrag")
             generateKConfig(config['linux-config'] + [cpioDir / "initramfs.kfrag"], config['linux-src'])
-            run(['make'] + getOpt('linux-make-args') + ['vmlinux', getOpt('jlevel')], cwd=config['linux-src'])
+            run(['make'] + getOpt('linux-make-args') + ['vmlinux', 'Image', getOpt('jlevel')], cwd=config['linux-src'])
 
-        # BBL doesn't seem to detect changes in its configuration and won't rebuild if the payload path changes
-        pk_build = (config['pk-src'] / 'build')
-        if pk_build.exists():
-            shutil.rmtree(pk_build)
-        pk_build.mkdir()
-
-        run(['../configure', '--host=riscv64-unknown-elf',
-            '--with-payload=' + str(config['linux-src'] / 'vmlinux')], cwd=pk_build)
-        run(['make', getOpt('jlevel')], cwd=pk_build)
+        if config['use-bbl']:
+            fw = makeBBL(config, nodisk)
+        else:
+            fw = makeOpenSBI(config, nodisk)
 
         if nodisk:
-            shutil.copy(pk_build / 'bbl', noDiskPath(config['bin']))
+            shutil.copy(fw, noDiskPath(config['bin']))
             shutil.copy(config['linux-src'] / 'vmlinux', noDiskPath(config['dwarf']))
         else:
-            shutil.copy(pk_build / 'bbl', config['bin'])
+            shutil.copy(fw, config['bin'])
             shutil.copy(config['linux-src'] / 'vmlinux', config['dwarf'])
 
     return True
@@ -405,6 +483,10 @@ def makeImage(config):
     # Resize if needed
     if config['img-sz'] != 0:
         resizeFS(config['img'], config['img-sz'])
+
+    if 'overlay' in config:
+        log.info("Applying Overlay: " + str(config['overlay']))
+        applyOverlay(config['img'], config['overlay'])
 
     if 'files' in config:
         log.info("Applying file list: " + str(config['files']))
