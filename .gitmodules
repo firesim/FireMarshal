@@ -9,4 +9,4 @@
 	url = https://git.buildroot.net/buildroot
 [submodule "workloads/pfa-exp"]
 	path = workloads/pfa-exp
-	url = git@github.com:WabashOS/pfa-exp.git
+	url = https://github.com/WabashOS/pfa-exp.git
