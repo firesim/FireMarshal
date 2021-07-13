@@ -528,6 +528,7 @@ if sp.run(['/usr/bin/sudo', '-ln', 'true'], stdout=sp.DEVNULL).returncode == 0:
         try:
             yield mntPath
         finally:
+            time.sleep(1)
             run(sudoCmd + ['umount', mntPath])
 else:
     # User doesn't have sudo (use guestmount, slow but reliable)
