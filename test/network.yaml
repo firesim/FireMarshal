@@ -1,0 +1,12 @@
+{
+  "name" : "network",
+  "base" : "br-base.json",
+  "jobs" : [
+    {
+      "name" : "node0"
+    },
+    {
+      "name" : "node1"
+    }
+  ]
+}
