@@ -1,6 +1,7 @@
 {
   "name" : "network",
   "base" : "br-base.json",
+  "overlay" : "overlay",
   "jobs" : [
     {
       "name" : "node0"

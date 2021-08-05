@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+# Debian ifupdown needs the /run/network lock directory
+mkdir -p /run/network
+
+case "$1" in
+  start)
+	printf "Starting network: "
+	/sbin/ifup -a
+	ifname=eth0
+	if test -r "/sys/class/net/${ifname}/address" ; then
+		/sbin/ip link set dev "$ifname" up &&
+		IFS=: read -r _ _ _ _ machigh maclow < "/sys/class/net/${ifname}/address" &&
+		/sbin/ip addr add "172.16.$((16#$machigh)).$((16#$maclow))/16" dev "$ifname"
+	fi
+#	/sbin/ifup eth0
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  stop)
+	printf "Stopping network: "
+	/sbin/ifdown -a
+#	/sbin/ifdown eth0
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  restart|reload)
+	"$0" stop
+	"$0" start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+
