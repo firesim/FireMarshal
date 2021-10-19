@@ -54,6 +54,7 @@ configUser = [
         'command',
         # Path to script to run on the guest exactly once when building
         'guest-init',
+        'host-init-post-img',
         # Path to directory for this workload, all user-provided paths will
         # be relative to this (but converted to absolute when loaded)
         'workdir',
@@ -458,7 +459,7 @@ class Config(collections.MutableMapping):
             self.cfg['runSpec'] = RunSpec(command=self.cfg['command'])
 
         # Handle script arguments
-        for sOpt in ['guest-init', 'post_run_hook', 'host-init', 'post-bin']:
+        for sOpt in ['guest-init', 'host-init-post-img', 'post_run_hook', 'host-init', 'post-bin']:
             if sOpt in self.cfg:
                 self.cfg[sOpt] = RunSpec.fromString(
                         self.cfg[sOpt],
@@ -538,7 +539,7 @@ class Config(collections.MutableMapping):
             self.cfg['use-parent-bin'] = True
             for opt in ['firmware', 'linux', 'host-init']:
                 if opt not in self.cfg:
-                    # Child doesn't overwrite a non-heritable option 
+                    # Child doesn't overwrite a non-heritable option
                     continue
                 elif self.cfg.get(opt, None) != baseCfg.get(opt, None):
                     self.cfg['use-parent-bin'] = False

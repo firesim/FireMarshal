@@ -260,6 +260,9 @@ def addDep(loader, config):
         if 'guest-init' in config:
             img_file_deps.append(config['guest-init'].path)
             img_task_deps.append(str(config['bin']))
+        if 'host-init-post-img' in config:
+            img_file_deps.append(config['host-init-post-img'].path)
+            img_task_deps.append(str(config['bin']))
         if 'runSpec' in config and config['runSpec'].path != None:
             img_file_deps.append(config['runSpec'].path)
         if 'cfg-file' in config:
@@ -558,6 +561,13 @@ def makeImage(config):
     # Resize if needed
     if config['img-sz'] != 0:
         resizeFS(config['img'], config['img-sz'])
+
+    if 'host-init-post-img' in config:
+       log.info("Applying host-init-post-img: " + str(config['host-init-post-img']))
+       if not config['host-init-post-img'].path.exists():
+           raise ValueError("host-init-post-img script " + str(config['host-init-post-img']) + " not found.")
+
+       run([config['host-init-post-img'].path] + config['host-init-post-img'].args, cwd=config['workdir'])
 
     if 'overlay' in config:
         log.info("Applying Overlay: " + str(config['overlay']))
