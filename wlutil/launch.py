@@ -5,7 +5,10 @@ import sys
 import subprocess as sp
 from . import wlutil
 
+import time
+
 jobProcs = []
+vdeProc = None
 
 
 # Terminates jobs unless they have stopped running already
@@ -15,10 +18,27 @@ def cleanUpSubProcesses():
         if proc.poll() is None:
             log.info(f'cleaning up launched workload process {proc.pid}')
             proc.terminate()
-
+    cleanUpVDE()
 
 # Register clean up function with wlutil.py so it can be called by SIGINT handler
 wlutil.registerCleanUp(cleanUpSubProcesses)
+
+# Start vde_plug server
+def startVDE():
+    log = logging.getLogger()
+    global vdeProc
+    log.info('Starting VDE')
+    vdeCmd = "script -f -c \"vde_plug switch:///tmp/mysw cmd://'slirpvde - --dhcp=172.16.177.1'\""
+    vdeProc = sp.Popen(["screen", "-S", "VDE", "-m", "bash", "-c", vdeCmd], stderr=sp.STDOUT)
+    time.sleep(60)
+
+
+# Terminate vdeProc unless it has stopped running already
+def cleanUpVDE():
+    log = logging.getLogger()
+    if vdeProc and vdeProc.poll() is None:
+        log.info(f'cleaning up VDE process {vdeProc.pid}')
+        vdeProc.terminate()
 
 
 # Kinda hacky (technically not guaranteed to give a free port, just very likely)
@@ -28,7 +48,6 @@ def get_free_tcp_port():
     addr, port = tcp.getsockname()
     tcp.close()
     return str(port)
-
 
 # Returns a command string to launch the given config in spike. Must be called with shell=True.
 def getSpikeCmd(config, nodisk=False):
@@ -56,7 +75,7 @@ def getSpikeCmd(config, nodisk=False):
 
 # Returns a command string to luanch the given config in qemu. Must be called with shell=True.
 def getQemuCmd(config, nodisk=False):
-    launch_port = get_free_tcp_port()
+    # launch_port = get_free_tcp_port()
 
     if nodisk:
         exe = str(wlutil.noDiskPath(config['bin']))
@@ -77,8 +96,10 @@ def getQemuCmd(config, nodisk=False):
            '-kernel', exe,
            '-object', 'rng-random,filename=/dev/urandom,id=rng0',
            '-device', 'virtio-rng-device,rng=rng0',
-           '-device', 'virtio-net-device,netdev=usernet',
-           '-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
+           # '-device', 'virtio-net-device,netdev=usernet',
+           '-device', 'e1000,netdev=vde0',
+           # '-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
+           '-netdev', 'vde,id=vde0,sock=vde:///tmp/mysw']
 
     if 'img' in config and not nodisk:
         cmd = cmd + ['-device', 'virtio-blk-device,drive=hd0',
@@ -108,6 +129,9 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
 
     if not spike and baseConfig.get('qemu', True) is None:
         raise RuntimeError("This workload does not support qemu")
+
+    if not spike:
+        startVDE()
 
     if jobs is None:
         configs = [baseConfig]
@@ -160,6 +184,9 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
     except Exception:
         cleanUpSubProcesses()
         raise
+
+    finally:
+        cleanUpVDE()
 
     for config in configs:
         if 'outputs' in config:
