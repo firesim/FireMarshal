@@ -72,7 +72,7 @@ def getSpikeCmd(config, nodisk=False):
 
 
 # Returns a command string to luanch the given config in qemu. Must be called with shell=True.
-def getQemuCmd(config, nodisk=False):
+def getQemuCmd(config, count, nodisk=False):
     # launch_port = get_free_tcp_port()
 
     if nodisk:
@@ -85,6 +85,14 @@ def getQemuCmd(config, nodisk=False):
     else:
         qemuBin = 'qemu-system-riscv64'
 
+    # We should start static IP addresses at 172.16.0.4 => 4 = 1 (min val of count) + 3
+    count += 3
+    machigh = '00'
+    if count < 16:
+        maclow = '0' + hex(count)[2:]
+    else: 
+        maclow = hex(count)[2:]
+
     cmd = [qemuBin,
            '-nographic',
            '-bios none',
@@ -94,7 +102,7 @@ def getQemuCmd(config, nodisk=False):
            '-kernel', exe,
            '-object', 'rng-random,filename=/dev/urandom,id=rng0',
            '-device', 'virtio-rng-device,rng=rng0',
-           '-device', 'virtio-net-device,netdev=usernet',
+           '-device', f'virtio-net-device,netdev=vde0,mac=00:12:6d:00:{machigh}:{maclow}',
            #'-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
            '-netdev', 'vde,id=vde0,sock=vde:///tmp/mysw']
 
@@ -140,8 +148,12 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
     screenIdentifiers = {}
 
     try:
+        count = 0;
         for config in configs:
             if config['launch']:
+                
+                count += 1
+
                 runResDir = baseResDir / config['name']
                 uartLog = runResDir / "uartlog"
                 os.makedirs(runResDir)
@@ -149,7 +161,7 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
                 if spike:
                     cmd = getSpikeCmd(config, config['nodisk'])
                 else:
-                    cmd = getQemuCmd(config, config['nodisk'])
+                    cmd = getQemuCmd(config, count, config['nodisk'])
 
                 log.info(f"\nLaunching job {config['name']}")
                 log.info(f'Running: {cmd}')
@@ -174,6 +186,7 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
 
         for proc in jobProcs:
             proc.wait()
+        cleanUpVDE()
 
     except Exception:
         cleanUpSubProcesses()
