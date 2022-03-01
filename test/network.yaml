@@ -1,0 +1,23 @@
+{
+  "name" : "network",
+  "base" : "br-base.json",
+  "overlay": "overlay",
+  "testing" : {
+    "refDir" : "refOutput",
+    "strip" : true
+  },
+  "jobs" : [
+    {
+      "name" : "j0",
+      "command" : "/root/server 172.16.0.4 2",
+    },
+    {
+      "name" : "j1",
+      "command" : "sleep 3; /root/client 172.16.0.4"
+    },
+    {
+      "name" : "j2",
+      "command" : "sleep 5; /root/client 172.16.0.4"
+    }
+  ]
+}
