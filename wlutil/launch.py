@@ -25,7 +25,7 @@ def startVDE():
     log = logging.getLogger()
     global vdeProc
     log.info('Starting VDE')
-    vdeProc = sp.Popen(["vde_plug", "switch:///tmp/mysw", "cmd://slirpvde - --host=172.16.0.2/16 --dns=172.16.0.3"], stderr=sp.STDOUT)
+    vdeProc = sp.Popen(["vde_plug", "vxvde://", "slirp:///host=172.16.0.2"], stderr=sp.STDOUT)
 
 
 # Terminate vdeProc unless it has stopped running already
@@ -104,7 +104,7 @@ def getQemuCmd(config, count=1, nodisk=False):
            '-device', 'virtio-rng-device,rng=rng0',
            '-device', f'virtio-net-device,netdev=vde0,mac=00:12:6d:00:{machigh}:{maclow}',
            #'-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
-           '-netdev', 'vde,id=vde0,sock=vde:///tmp/mysw']
+           '-netdev', 'vde,id=vde0,sock=vxvde://']
 
     if 'img' in config and not nodisk:
         cmd = cmd + ['-device', 'virtio-blk-device,drive=hd0',
