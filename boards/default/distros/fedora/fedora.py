@@ -7,6 +7,8 @@ import re
 serviceTemplate = """[Unit]
 Requires=multi-user.target
 After=multi-user.target
+Requires=network-online.target
+After=network-online.target
 Before=firesim.target
 Wants=firesim.target
 

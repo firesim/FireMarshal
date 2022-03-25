@@ -72,7 +72,7 @@ def getSpikeCmd(config, nodisk=False):
 
 
 # Returns a command string to luanch the given config in qemu. Must be called with shell=True.
-def getQemuCmd(config, count, nodisk=False):
+def getQemuCmd(config, count=1, nodisk=False):
     # launch_port = get_free_tcp_port()
 
     if nodisk:
@@ -113,7 +113,7 @@ def getQemuCmd(config, count, nodisk=False):
     return " ".join(cmd) + " " + config.get('qemu-args', '')
 
 
-def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
+def launchWorkload(baseConfig, jobs=None, spike=False, silent=False, captureOutput=True):
     """Launches the specified workload in functional simulation.
 
     cfgName: unique name of the workload in the cfgs
@@ -154,10 +154,6 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
                 
                 count += 1
 
-                runResDir = baseResDir / config['name']
-                uartLog = runResDir / "uartlog"
-                os.makedirs(runResDir)
-
                 if spike:
                     cmd = getSpikeCmd(config, config['nodisk'])
                 else:
@@ -165,10 +161,17 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
 
                 log.info(f"\nLaunching job {config['name']}")
                 log.info(f'Running: {cmd}')
-                if silent:
-                    log.info("For live output see: " + str(uartLog))
 
-                scriptCmd = f'script -f -c "{cmd}" {uartLog}'
+                if captureOutput:
+                    runResDir = baseResDir / config['name']
+                    uartLog = runResDir / "uartlog"
+                    os.makedirs(runResDir)
+                    scriptCmd = f'script -f -c "{cmd}" {uartLog}'
+                else:
+                    scriptCmd = cmd
+
+                if silent and captureOutput:
+                    log.info("For live output see: " + str(uartLog))
 
                 if not silent and len(configs) == 1:
                     jobProcs.append(sp.Popen(["screen", "-S", config['name'], "-m", "bash", "-c", scriptCmd], stderr=sp.STDOUT))
@@ -196,11 +199,12 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
         cleanUpVDE()
 
     for config in configs:
-        if 'outputs' in config:
+        if 'outputs' in config and captureOutput:
+            runResDir = baseResDir / config['name']
             outputSpec = [wlutil.FileSpec(src=f, dst=runResDir) for f in config['outputs']]
             wlutil.copyImgFiles(config['img'], outputSpec, direction='out')
 
-    if 'post_run_hook' in baseConfig:
+    if 'post_run_hook' in baseConfig and captureOutput:
         prhCmd = [baseConfig['post_run_hook'].path] + baseConfig['post_run_hook'].args + [baseResDir]
         log.info("Running post_run_hook script: " + ' '.join([str(x) for x in prhCmd]))
         try:

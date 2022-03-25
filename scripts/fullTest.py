@@ -69,7 +69,10 @@ categoryTests = {
             'qemu',
             'run',
             'simArgs',
-            'noDrivers'
+            'noDrivers',
+            'internet',
+            'network',
+            'fed-nw-internet'
         ],
 
         # This tests both no-disk and spike. In theory, most (maybe all?) tests

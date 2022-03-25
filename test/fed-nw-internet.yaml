@@ -1,6 +1,6 @@
 {
-  "name" : "network",
-  "base" : "br-base.json",
+  "name" : "fed-nw-internet",
+  "base" : "fedora-base.json",
   "overlay": "overlay",
   "testing" : {
     "refDir" : "refOutput",
@@ -8,16 +8,20 @@
   },
   "jobs" : [
     {
-      "name" : "j0",      
+      "name" : "j0",
       "command" : "timeout 75 /root/test-server.sh"
     },
     {
-      "name" : "j1", 
+      "name" : "j1",
       "command" : "/root/test-client-1.sh"
     },
     {
       "name" : "j2",
       "command" : "/root/test-client-2.sh"
+    },
+    {
+      "name" : "j3",
+      "command" : 'yum install -y wget && wget fires.im && echo "Success : yum + wget"'
     }
   ]
 }
