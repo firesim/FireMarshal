@@ -83,7 +83,7 @@ Launch all jobs in the workload. Jobs will be run sequentially. See the
 ``-j --job``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In workloads with multiple jobs, you can specify which job(s) to launch.
-FireMarshal supports running multiple jobs concurrently but does not support networked jobs yet. Jobs are identified by their ``name`` attribute. Multiple ``-j``
+FireMarshal supports running multiple networked jobs concurrently. Jobs are identified by their ``name`` attribute. Multiple ``-j``
 options may be passed to invoke multiple jobs. Use ``--all`` to launch all jobs
 in the workload. If neither ``--job`` nor ``--all`` are provided, the root
 workload will be run. The root workload is the parent of all the jobs (i.e. the

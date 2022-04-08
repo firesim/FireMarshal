@@ -4,7 +4,7 @@ Parallel Jobs
 ======================
 ``example-workloads/parallelJobs.yaml``
 
-FireMarshal is capable of running multiple jobs in parallel. To understand how this feature works, let's use the ``parallelJobs.yaml`` workload as an example.
+FireMarshal is capable of running multiple networked jobs in parallel. To understand how this feature works, let's use the ``parallelJobs.yaml`` workload as an example.
 
 .. include:: ../../../example-workloads/parallelJobs.yaml
   :code: json
@@ -28,7 +28,23 @@ The default login details for all workloads are:
 
 ``Password:`` ``firesim``
 
-Once logged in, you can run commands in the terminal. To exit, use:
+Once logged in, you can run commands in the terminal. 
+
+FireMarshal uses a Virtual Distributed Ethernet (VDE) network with a gateway at ``172.16.0.1`` and DNS nameserver at ``172.16.1.3``. It assigns IP addresses starting with ``172.16.0.2``. 
+
+We expect the root workload to have an IP address of ``172.16.0.2``. We can check the IP address assigned to interface ``eth0`` with:
+
+::
+
+  ip addr show eth0
+
+We can also test conncectivity to the internet with:
+
+::
+
+  wget -S fires.im
+
+To exit, use:
 
 ::
 
@@ -61,28 +77,51 @@ For instance, attach to job ``j0``, using:
 
   screen -r parallelJobs-j0
 
+You need to login with the the details provided above.
+
+We expect job ``j0`` to have IP address ``172.16.0.2`` and job ``j1`` to have IP address ``172.16.0.3``. Let's test these out!
+
+Inside job ``j0``, run:
+
+::
+
+  ip addr show eth0
+
 
 To detach from inside the screen session, use ``ctrl-a`` then ``ctrl-d``.
 
 
-Similarly, attach to job ``j1``, using:
+Again, we can attach to job ``j1``, using:
 
 ::
 
   screen -r parallelJobs-j1
 
+Similarly, we test the IP address of job ``j1`` with:
 
-Login (with the details provided above) and then use the ``poweroff`` command to shut job ``j1`` down.
+::
+
+  ip addr show eth0
+
+Jobs ``j0`` and ``j1`` should be able to communicate with each other over the network. We can try this feature by pinging ``j0 (172.16.0.2)`` from ``j1``:
+
+::
+
+  ping 172.16.0.2
+
+You should see the command print the result of sending and receiving packets. We can terminate this command with ``Ctrl/Command + C``.
+
+Now, use the ``poweroff`` command to shut job ``j1`` down.
 
 
-Now re-attach to job ``j0``, using:
+Then, re-attach to job ``j0``, using:
 
 ::
 
   screen -r parallelJobs-j0
 
 
-Login (with the details provided above) and then use the ``poweroff`` command to shut job ``j0`` down.
+Again, use the ``poweroff`` command to shut job ``j0`` down.
 
 FireMarshal also logs ``stdout`` and ``stderr`` to a ``uartlog`` file for each workload. These files can be found inside the corresponding workload output directory inside ``runOutputs``. The path to this directory will be output by the ``launch`` command. For instance, a workload output directory for the launched ``parallelJobs`` workload would be called ``parallelJobs-launch-YYYY-MM-DD--HH-MM-SS-<HASH>``.  
 
