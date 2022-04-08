@@ -1,7 +1,7 @@
 #/bin/bash
 ip_read=`ip -f inet addr show eth0 | grep -Po 'inet \K[\d.]+'`
-if [ "$ip_read" = "172.16.0.6" ]; then
-	/root/client 172.16.0.4
+if [ "$ip_read" = "172.16.0.4" ]; then
+	/root/client 172.16.0.2
        	if [ "$?" -eq "0" ]; then
 		echo 'Success : ip + client'
 	else
@@ -9,4 +9,6 @@ if [ "$ip_read" = "172.16.0.6" ]; then
 	fi
 else
 	echo 'Failed : ip'
+	echo 'Expected : 172.16.0.4'                                                                                                                                                                                                        
+	echo 'Received : $ip_read'
 fi

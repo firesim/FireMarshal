@@ -1,6 +1,7 @@
 {
   "name" : "fed-nw-internet",
   "base" : "fedora-base.json",
+  "host-init" : "host-init.sh",
   "overlay": "overlay",
   "testing" : {
     "refDir" : "refOutput",

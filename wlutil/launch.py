@@ -25,7 +25,7 @@ def startVDE():
     log = logging.getLogger()
     global vdeProc
     log.info('Starting VDE')
-    vdeProc = sp.Popen(["vde_plug", "vxvde://", "slirp:///host=172.16.0.2"], stderr=sp.STDOUT)
+    vdeProc = sp.Popen(["vde_plug", "vxvde://", "cmd://slirpvde - --host=172.16.0.1/16 --dns=172.16.1.3"], stderr=sp.STDOUT)
 
 
 # Terminate vdeProc unless it has stopped running already
@@ -73,7 +73,6 @@ def getSpikeCmd(config, nodisk=False):
 
 # Returns a command string to luanch the given config in qemu. Must be called with shell=True.
 def getQemuCmd(config, count=1, nodisk=False):
-    # launch_port = get_free_tcp_port()
 
     if nodisk:
         exe = str(wlutil.noDiskPath(config['bin']))
@@ -85,8 +84,8 @@ def getQemuCmd(config, count=1, nodisk=False):
     else:
         qemuBin = 'qemu-system-riscv64'
 
-    # We should start static IP addresses at 172.16.0.4 => 4 = 1 (min val of count) + 3
-    count += 3
+    # We should start static IP addresses at 172.16.0.2 => 4 = 1 (min val of count) + 1
+    count += 1
     machigh = '00'
     if count < 16:
         maclow = '0' + hex(count)[2:]
@@ -103,7 +102,6 @@ def getQemuCmd(config, count=1, nodisk=False):
            '-object', 'rng-random,filename=/dev/urandom,id=rng0',
            '-device', 'virtio-rng-device,rng=rng0',
            '-device', f'virtio-net-device,netdev=vde0,mac=00:12:6d:00:{machigh}:{maclow}',
-           #'-netdev', 'user,id=usernet,hostfwd=tcp::' + launch_port + '-:22']
            '-netdev', 'vde,id=vde0,sock=vxvde://']
 
     if 'img' in config and not nodisk:
@@ -124,6 +122,8 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False, captureOutp
     silent: If false, the output from the simulator will be displayed to
         stdout. If true, only the uartlog will be written (it is written live and
         unbuffered so users can still 'tail' the output if they'd like).
+    captureOutput: If true, the output for each workload will be captured in a uartlog file stored
+        in a separate workload specific directory. If false, no output will be captured. (Useful for building workloads.)
 
     Returns: Path of output directory
     """
@@ -148,16 +148,16 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False, captureOutp
     screenIdentifiers = {}
 
     try:
-        count = 0;
+        jobSlot = 0;
         for config in configs:
             if config['launch']:
                 
-                count += 1
+                jobSlot += 1
 
                 if spike:
                     cmd = getSpikeCmd(config, config['nodisk'])
                 else:
-                    cmd = getQemuCmd(config, count, config['nodisk'])
+                    cmd = getQemuCmd(config, jobSlot, config['nodisk'])
 
                 log.info(f"\nLaunching job {config['name']}")
                 log.info(f'Running: {cmd}')

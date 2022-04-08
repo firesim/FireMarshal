@@ -12,7 +12,7 @@ case "$macpref" in
                 maclow=$(echo $mac | cut -c 16-17 -)
                 cp /etc/firesim/ifcfg-static /etc/sysconfig/network-scripts/ifcfg-eth0
                 echo IPADDR=172.16.$((16#$machigh)).$((16#$maclow)) >> /etc/sysconfig/network-scripts/ifcfg-eth0
-                echo default via 172.16.0.2 dev eth0 > /etc/sysconfig/network-scripts/route-eth0
+                echo default via 172.16.0.1 dev eth0 > /etc/sysconfig/network-scripts/route-eth0
                 cp /etc/firesim/network-static /etc/sysconfig/network
                 ;;
         "52:54:00")

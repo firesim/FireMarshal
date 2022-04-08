@@ -5,24 +5,29 @@
 # Debian ifupdown needs the /run/network lock directory
 mkdir -p /run/network
 
+# Write DNS to /etc/resolv.conf
 resolvconf_file="/etc/resolv.conf"
 rm -f $resolvconf_file
-echo "nameserver 172.16.0.3" > $resolvconf_file
+echo "nameserver 172.16.1.3" > $resolvconf_file
 
+# mac address of NIC at eth0 decides ip address we'd like to use
 ifname=eth0
 read _ addr _ _ <<< $(/sbin/ip link | /bin/grep -A 1 "$ifname" | /usr/bin/tail -1)
+# Extract the bottom 2 bytes of mac addr
 IFS=: read -r _ _ _ _ machigh maclow <<< $addr
 
 case "$1" in
 	start)
 		printf "Starting network: "
-        /bin/sed -i -e "1,/^address/{s/^address.*/address 172.16.$((16#$machigh)).$((16#$maclow))/;}" /etc/network/interfaces
+	# Use sed to substitute target address 172.16.machigh.maclow for the first interface (eth0) in /etc/network/interfaces
+	/bin/sed -i -e "1,/^address/{s/^address.*/address 172.16.$((16#$machigh)).$((16#$maclow))/;}" /etc/network/interfaces
         sbin/ifup -a
         [ $? = 0 ] && echo "OK" || echo "FAIL"
         ;;
     stop)
         printf "Stopping network: "
         /sbin/ifdown -a
+	# Not functionalyl necessary, substitute "firemarshal_ip_addr_uninitialized" for eth0 in /etc/network/interfaces to make the file understandable for users
         /bin/sed -i -e "1,/^address/{s/^address.*/address firemarshal_ip_addr_uninitialized/;}" /etc/network/interfaces
         [ $? = 0 ] && echo "OK" || echo "FAIL"
         ;;

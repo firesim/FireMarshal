@@ -1,7 +1,8 @@
 {
   "name" : "network",
   "base" : "br-base.json",
-  "overlay": "overlay",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
   "testing" : {
     "refDir" : "refOutput",
     "strip" : true
