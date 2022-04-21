@@ -7,6 +7,7 @@ from . import wlutil
 jobProcs = []
 vdeProc = None
 
+
 # Terminates jobs unless they have stopped running already
 def cleanUpSubProcesses():
     log = logging.getLogger()
@@ -19,6 +20,7 @@ def cleanUpSubProcesses():
 
 # Register clean up function with wlutil.py so it can be called by SIGINT handler
 wlutil.registerCleanUp(cleanUpSubProcesses)
+
 
 # Start vde_plug server
 def startVDE():
@@ -34,7 +36,8 @@ def cleanUpVDE():
     if vdeProc and vdeProc.poll() is None:
         log.info(f'cleaning up VDE process {vdeProc.pid}')
         vdeProc.terminate()
-                                                            
+
+
 # Kinda hacky (technically not guaranteed to give a free port, just very likely)
 def get_free_tcp_port():
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -89,7 +92,7 @@ def getQemuCmd(config, count=1, nodisk=False):
     machigh = '00'
     if count < 16:
         maclow = '0' + hex(count)[2:]
-    else: 
+    else:
         maclow = hex(count)[2:]
 
     cmd = [qemuBin,
@@ -148,10 +151,10 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False, captureOutp
     screenIdentifiers = {}
 
     try:
-        jobSlot = 0;
+        jobSlot = 0
         for config in configs:
             if config['launch']:
-                
+
                 jobSlot += 1
 
                 if spike:
