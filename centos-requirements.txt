@@ -15,3 +15,8 @@ glib-devel
 gtk2-devel
 ctags
 bc
+openssl-devel
+pkgconfig
+glib2-devel
+unzip
+wget

@@ -5,3 +5,4 @@ wlutil/_command.sh
 .doit.db*
 marshal-config.yaml
 .ropeproject
+dependencies
