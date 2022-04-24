@@ -3,13 +3,20 @@
 
 # thanks to Giacomo Rizzi: some ideas have been taken from: https://github.com/gufoe/vuos-tutorial
 
+bare_metal=0
+
 while getopts p: flag
 do
 	case "${flag}" in
 		p) prefix=${OPTARG};;
+		b) bare_metal=1;;
 	esac
 done
 
+INITWD=$(pwd)
+
+# switch to firemarshal/install dir
+cd "$(dirname "$0")"
 BASE=$(pwd)
 echo "BASE: $BASE"
 
@@ -38,13 +45,24 @@ function check_env {
 }
 
 function check_deps {
-	_=$(which python3.8)
-	if [ $? -ne 0 ]
+
+	if [ $bare_metal -eq 1 ] && [ "$os" = "centos" ]
 	then
-		echo "python3.8 not found"
-		exit 1
+		_=$(which python3)
+		if [ $? -ne 0 ]
+		then
+			echo "python3 not found"
+			exit 1
+		fi
+	else 
+		_=$(which python3.8)
+		if [ $? -ne 0 ]
+		then
+			echo "python3.8 not found"
+			exit 1
+		fi
 	fi
-	
+		
 	_=$(which unzip)
 	if [ $? -ne 0 ]
 	then
@@ -61,9 +79,30 @@ function check_deps {
 
 }
 
-check_env
+function install_std {
+	if [ "$os" = "deb/ubuntu" ]
+	then
+		cat ubuntu-requirements.txt | sudo xargs apt-get install -y
+	elif [ "$os" = "centos" ]
+	then
+		if [ $bare_metal -eq 0 ]
+		then
+			sudo yum install -y centos-release-scl
+			sudo yum install -y rh-python38
+			scl enable rh-python38 bash
+		fi
+		cat centos-requirements.txt | sudo xargs yum install -y
+	fi
+}
 
+function install_pylibs {
+	pip3 install -r python-requirements.txt
+}
+
+check_env
+install_std
 check_deps
+instal_pylibs
 
 # User friendly messages on error
 set -E
@@ -210,31 +249,37 @@ function install_qemu {
 
 # Start installation
 
-rm -rf dependencies
-mkdir dependencies
-
-if [ -z "$prefix" ]
+if [ $bare_metal -eq 0 ]
 then
-	prefix=${RISCV}
+	
+	rm -rf dependencies
+	mkdir dependencies
+
+	if [ -z "$prefix" ]
+	then
+		prefix=${RISCV}
+	fi
+	
+	install_cmake
+	install_ninja
+	install_meson
+	install_libslirp
+
+	install_repo https://github.com/virtualsquare/s2argv-execs/archive/refs/tags/1.3.tar.gz s2argv-execs
+	install_repo https://github.com/rd235/vdeplug4/archive/refs/tags/v4.0.1.tar.gz vdeplug4
+	install_repo https://github.com/virtualsquare/libvdeslirp/archive/refs/tags/0.1.1.tar.gz libvdeslirp
+	install_repo https://github.com/virtualsquare/vdeplug_slirp/archive/refs/tags/0.1.0.tar.gz vdeplug_slirp
+
+	install_qemu
+
+	cd .. && ./init-submodules.sh
+
+
+	if [ "$os" = "centos" ]
+	then
+		sudo yum remove -y rm-python38-python
+	fi
 fi
-
-if [ -n "$prefix" ]
-then
-	export PATH="$prefix:$prefix/bin:${PATH}"
-fi
-
-install_cmake
-install_ninja
-install_meson
-install_libslirp
-
-install_repo https://github.com/virtualsquare/s2argv-execs/archive/refs/tags/1.3.tar.gz s2argv-execs
-install_repo https://github.com/rd235/vdeplug4/archive/refs/tags/v4.0.1.tar.gz vdeplug4
-install_repo https://github.com/virtualsquare/libvdeslirp/archive/refs/tags/0.1.1.tar.gz libvdeslirp
-install_repo https://github.com/virtualsquare/vdeplug_slirp/archive/refs/tags/0.1.0.tar.gz vdeplug_slirp
-
-install_qemu
-
-./init-submodules.sh
 
 echo 'Installation completed'
+cd $INITWD

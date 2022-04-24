@@ -19,3 +19,4 @@ build-essential
 libssl-dev
 pkg-config
 wget
+gettext
