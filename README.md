@@ -8,59 +8,36 @@ This is just a quick primer. To see full documentation, please see the official
 documentation:
 https://firemarshal.readthedocs.io/en/latest/index.html
 
-# Requirements
+# Setup
+
 The easiest way to use Marshal is to run it via Chipyard
 (https://chipyard.readthedocs.io/en/latest/) or FireSim
 (https://docs.fires.im/en/latest/). However, this is not required. 
 
-To run FireMarshal, you will need the following dependencies:
+Run the following script to install all of FireMarshal's dependencies (standard packages from apt/yum, python libraries, open-source packages, submodules):
 
-## Standard Packages
-``centos-requirements.txt`` is a list of packages for centos7 that are needed by
-marshal. You can install these with:
 ```
-cat centos-requirements.txt | sudo xargs yum install -y
+./install/marshal-dependencies.sh
 ```
 
-``ubuntu-requirements.txt`` is a list of packages for Ubuntu 18.04 that are needed by marshal.
-You can install these with:
-```
-cat ubuntu-requirements.txt | sudo xargs apt-get install -y
-```
+Note that this script downloads dependencies to `install/dependencies` and installs them at the path pointed to by the `RISCV` environment variable. Thus, the script requires `RISCV` to be set and FireMarshal expects `PATH` to contain the path it points to (Chipyard/FireSim already do this).
 
-Package names may be different on other distributions.
+Running bare-metal workloads requires a minimal set of dependencies. You can install just these by passing the `-b` flag as follows:
+
+```
+./install/marshal-dependencies.sh -b
+```
 
 ### Note for Ubuntu
 The libguestfs-tools package (needed for the guestmount command) does not work
 out of the box on Ubuntu. See
 https://github.com/firesim/firesim-software/issues/30 for a workaround.
 
-## Python
-This project was written for python 3.8. You can install all dependencies using:
-```
-pip3 install -r python-requirements.txt
-```
-
-## Other Packages
-FireMarshal depends on other open-source packages that can be installed by running:
-
-```
-./marshal-dependencies.sh
-```
-
-Note that this script downloads dependencies to a `dependencies` directory and installs them at the path pointed to by the `RISCV` environment variable. Thus, the script requires `RISCV` to be set (Chipyard/FireSim already do this).
-
-This script also updates submodules.
-
 ## RISC-V Tools
-In addition to standard libraries, you will need a RISC-V compatible toolchain,
-the RISC-V isa simulator (spike). This is already installed by Chipyard/FireSim.
+In addition to the dependencies installed above, you will need a RISC-V compatible toolchain, the RISC-V isa simulator (spike). This is already installed by Chipyard/FireSim.
 
 See the [Chipyard documentation](https://chipyard.readthedocs.io/en/latest/Chipyard-Basics/Initial-Repo-Setup.html#building-a-toolchain)
 for help setting up a known-good toolchain and environment.
-
-## Qemu
-Qemu is the default simulator used by FireMarshal and it currently installs v6.2.0.
 
 # Basic Usage
 
