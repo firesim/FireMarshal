@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+# set -x
 
 # thanks to Giacomo Rizzi: some ideas have been taken from: https://github.com/gufoe/vuos-tutorial
 
@@ -20,89 +20,46 @@ cd "$(dirname "$0")"
 BASE=$(pwd)
 echo "BASE: $BASE"
 
-function check_env {
-	if [ -z ${RISCV} ]
-	then
-		echo "RISCV environment variable NOT FOUND"
-		exit 1
-	fi
+if [ -z ${RISCV} ]
+then
+	echo "RISCV environment variable NOT FOUND"
+	exit 1
+fi
 
-	_=$(which apt)
+# Determine Ubuntu vs Centos
+_=$(which apt)
+if [ $? -eq 0 ]
+then
+	os="deb/ubuntu"
+else
+	_=$(which yum)
 	if [ $? -eq 0 ]
-	then 
-		os="deb/ubuntu"
+	then
+		os="centos"
 	else
-		_=$(which yum)
-		if [ $? -eq 0 ]
-		then
-			os="centos"
-		else
-			echo "yum/apt NOT FOUND"
-			exit 1
-		fi
-	fi
-
-}
-
-function check_deps {
-
-	if [ $bare_metal -eq 1 ] && [ "$os" = "centos" ]
-	then
-		_=$(which python3)
-		if [ $? -ne 0 ]
-		then
-			echo "python3 not found"
-			exit 1
-		fi
-	else 
-		_=$(which python3.8)
-		if [ $? -ne 0 ]
-		then
-			echo "python3.8 not found"
-			exit 1
-		fi
-	fi
-		
-	_=$(which unzip)
-	if [ $? -ne 0 ]
-	then
-		echo "unzip not found"
+		echo "yum/apt NOT FOUND"
 		exit 1
 	fi
-	
-	_=$(which wget)
-	if [ $? -ne 0 ]
+fi
+
+
+echo -e "\nInstalling standard packages"
+if [ "$os" = "deb/ubuntu" ]
+then
+	cat ubuntu-requirements.txt | sudo xargs apt-get install -y
+elif [ "$os" = "centos" ]
+then
+	if [ $bare_metal -eq 0 ]
 	then
-		echo "wget not found"
-		exit 1
+		sudo yum install -y centos-release-scl
+		sudo yum install -y rh-python38
+        source /opt/rh/rh-python38/enable
 	fi
+	cat centos-requirements.txt | sudo xargs yum install -y
+fi
 
-}
-
-function install_std {
-	if [ "$os" = "deb/ubuntu" ]
-	then
-		cat ubuntu-requirements.txt | sudo xargs apt-get install -y
-	elif [ "$os" = "centos" ]
-	then
-		if [ $bare_metal -eq 0 ]
-		then
-			sudo yum install -y centos-release-scl
-			sudo yum install -y rh-python38
-			scl enable rh-python38 bash
-		fi
-		cat centos-requirements.txt | sudo xargs yum install -y
-	fi
-}
-
-function install_pylibs {
-	pip3 install -r python-requirements.txt
-}
-
-check_env
-install_std
-check_deps
-instal_pylibs
+echo -e "\nInstalling python dependencies"
+pip3 install --user -r python-requirements.txt
 
 # User friendly messages on error
 set -E
