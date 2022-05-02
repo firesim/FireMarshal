@@ -2,62 +2,44 @@ FireMarshal
 ==================================
 
 This tool builds base images for several linux-based distros that work with qemu,
-spike, and firesim.
+spike, and FireSim.
 
 This is just a quick primer. To see full documentation, please see the official
 documentation:
 https://firemarshal.readthedocs.io/en/latest/index.html
 
-# Requirements
+# Setup
+
 The easiest way to use Marshal is to run it via Chipyard
 (https://chipyard.readthedocs.io/en/latest/) or FireSim
-(https://docs.fires.im/en/latest/). However, this is not required. To run
-FireMarshal independently, you will need the following dependencies:
+(https://docs.fires.im/en/latest/). However, this is not required. 
 
-## Standard Packages
-``centos-requirements.txt`` is a list of packages for centos7 that are needed by
-marshal. You can install these with:
+Run the following script to install all of FireMarshal's dependencies (standard packages from apt/yum, python libraries, open-source packages, submodules):
+
 ```
-cat centos-requirements.txt | sudo xargs yum install -y
+./install/marshal-dependencies.sh
 ```
 
-``ubuntu-requirements.txt`` is a list of packages for Ubuntu 18.04 that are needed by marshal.
-You can install these with:
-```
-cat ubuntu-requirements.txt | sudo xargs apt-get install -y
-```
+Note that this script downloads dependencies to `install/dependencies` and installs them at the path pointed to by the `RISCV` environment variable. Thus, the script requires `RISCV` to be set and FireMarshal expects `PATH` to contain the path it points to (Chipyard/FireSim already do this).
 
-Package names may be different on other distributions.
+Running bare-metal workloads requires a minimal set of dependencies. You can install just these by passing the `-b` flag as follows:
+
+```
+./install/marshal-dependencies.sh -b
+```
 
 ### Note for Ubuntu
 The libguestfs-tools package (needed for the guestmount command) does not work
 out of the box on Ubuntu. See
 https://github.com/firesim/firesim-software/issues/30 for a workaround.
 
-## Python
-This project was written for python 3.6. You can install all dependencies using:
-```
-pip3 install -r python-requirements.txt
-```
-
 ## RISC-V Tools
-In addition to standard libraries, you will need a RISC-V compatible toolchain,
-the RISC-V isa simulator (spike).
+In addition to the dependencies installed above, you will need a RISC-V compatible toolchain, the RISC-V isa simulator (spike). This is already installed by Chipyard/FireSim.
 
 See the [Chipyard documentation](https://chipyard.readthedocs.io/en/latest/Chipyard-Basics/Initial-Repo-Setup.html#building-a-toolchain)
 for help setting up a known-good toolchain and environment.
 
-## Qemu
-Qemu is the default simulator used by firemarshal. We require version v5.0.0 or
-greater. If you aren't using chipyard, you can get it from:
-
-https://github.com/qemu/qemu/tree/v5.0.0
-
 # Basic Usage
-If you only want to build bare-metal workloads, you can skip updating
-submodules. Otherwise, you should update the required submodules by running:
-
-    ./init-submodules.sh
 
 Building workloads:
 
@@ -67,7 +49,7 @@ To run in qemu:
 
     ./marshal launch br-base.json
 
-To install into FireSim (assuming you cloned this as a submodule of firesim or chipyard):
+To install into FireSim (assuming you cloned this as a submodule of FireSim or Chipyard):
 
     ./marshal install br-base.json
 

@@ -1,0 +1,9 @@
+{
+  "name" : "internet",
+  "base" : "br-base.json",
+  "command" : 'wget -S fires.im && echo "Success : wget"',
+  "testing" : {
+    "refDir" : "refOutput",
+    "strip" : true
+  }
+}

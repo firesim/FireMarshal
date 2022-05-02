@@ -1,0 +1,11 @@
+[Unit]
+Requires=multi-user.target
+After=multi-user.target
+Requires=network-online.target
+After=network-online.target
+Before=firesim.target
+Wants=firesim.target
+
+[Service]
+ExecStart=/etc/firesim/firesim.sh 
+StandardOutput=journal+console

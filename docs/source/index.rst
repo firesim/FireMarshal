@@ -28,6 +28,7 @@ supported).
    :maxdepth: 3
    :caption: Contents:
 
+   gettingStarted
    Tutorials/index
    commands
    workloadConfig

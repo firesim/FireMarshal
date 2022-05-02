@@ -580,7 +580,7 @@ def makeImage(config):
         init_overlay = config['builder'].generateBootScriptOverlay(
             str(config['guest-init'].path), config['guest-init'].args)
         wlutil.applyOverlay(config['img'], init_overlay)
-        wlutil.run(wllaunch.getQemuCmd(config), shell=True, level=logging.DEBUG)
+        wllaunch.launchWorkload(config, jobs=None, spike=False, silent=True, captureOutput=False)
 
         # Clear the init script
         run_overlay = config['builder'].generateBootScriptOverlay(None, None)

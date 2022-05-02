@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec gcc -I "${MARSHAL_PREFIX}/include" -L "${MARSHAL_PREFIX}/lib64" -L "${MARSHAL_PREFIX}/lib64/x86_64-linux-gnu" "$@"

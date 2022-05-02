@@ -15,3 +15,8 @@ ctags
 bc
 e2fsprogs
 unzip
+build-essential
+libssl-dev
+pkg-config
+wget
+gettext
