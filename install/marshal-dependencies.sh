@@ -49,12 +49,6 @@ then
 	cat ubuntu-requirements.txt | sudo xargs apt-get install -y
 elif [ "$os" = "centos" ]
 then
-	if [ $bare_metal -eq 0 ]
-	then
-		sudo yum install -y centos-release-scl
-		sudo yum install -y rh-python38
-        source /opt/rh/rh-python38/enable
-	fi
 	cat centos-requirements.txt | sudo xargs yum install -y
 fi
 
@@ -217,10 +211,26 @@ then
 		prefix=${RISCV}
 	fi
 	
+	# vde packages need cmake >3.13
 	install_cmake
+
+	# meson needs Python 3.8, not available on CentOS 7 w/o scl
+	if [ "$os" = "centos" ]
+	then
+		sudo yum install -y centos-release-scl
+		sudo yum install -y rh-python38
+        source /opt/rh/rh-python38/enable
+	fi
+
 	install_ninja
 	install_meson
 	install_libslirp
+	
+	# we're done with meson
+	if [ "$os" = "centos" ]
+	then
+		sudo yum remove -y rh-python38-python
+	fi
 
 	install_repo https://github.com/virtualsquare/s2argv-execs/archive/refs/tags/1.3.tar.gz s2argv-execs
 	install_repo https://github.com/rd235/vdeplug4/archive/refs/tags/v4.0.1.tar.gz vdeplug4
@@ -230,12 +240,6 @@ then
 	install_qemu
 
 	cd .. && ./init-submodules.sh
-
-
-	if [ "$os" = "centos" ]
-	then
-		sudo yum remove -y rm-python38-python
-	fi
 fi
 
 echo 'Installation completed'
