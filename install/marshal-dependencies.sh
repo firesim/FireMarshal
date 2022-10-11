@@ -168,7 +168,7 @@ function install_libslirp {
 
 function install_qemu {
 	PREWD=$(pwd)
-	release=6.2.0
+	release=5.0.0
 	echo installing qemu-$release
 	cd  "$BASE"/dependencies
 	mkdir qemu
@@ -185,10 +185,10 @@ function install_qemu {
 	else
 		if [ "$os" = "deb/ubuntu" ]
 		then
-			MARSHAL_PREFIX=$prefix ../configure --prefix=$prefix --interp-prefix=$prefix --cc=$BASE/gccwrap-ubuntu --target-list=riscv64-softmmu --enable-vde --disable-werror
+			MARSHAL_PREFIX=$prefix ../configure --prefix=$prefix --interp-prefix=$prefix --cc=$BASE/gccwrap-ubuntu --target-list=riscv64-softmmu --enable-vde --disable-werror --extra-ldflags="-Wl,-rpath=$prefix/lib"
 			C_INCLUDE_PATH="$prefix/include" LIBRARY_PATH="$prefix/lib" make
 		else
-			MARSHAL_PREFIX=$prefix ../configure --prefix=$prefix --interp-prefix=$prefix --cc=$BASE/gccwrap-centos --target-list=riscv64-softmmu --enable-vde --disable-werror
+			MARSHAL_PREFIX=$prefix ../configure --prefix=$prefix --interp-prefix=$prefix --cc=$BASE/gccwrap-centos --target-list=riscv64-softmmu --enable-vde --disable-werror --extra-ldflags="-Wl,-rpath=$prefix/lib -Wl,-rpath=$prefix/lib64"
 			C_INCLUDE_PATH="$prefix/include" LIBRARY_PATH="$prefix/lib64" make
 		fi
 	fi
