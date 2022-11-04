@@ -92,9 +92,9 @@ jobs:
               exit 1
           fi
           ulimit -Sn $(ulimit -Hn)
-      - name: Patching screen error in container
-        run: |
-          script /dev/null # credit https://stackoverflow.com/questions/39471261
+          #      - name: Patching screen error in container
+          #        run: |
+          #          script /dev/null # credit https://stackoverflow.com/questions/39471261
 
   run-tests:
     name: run-tests
