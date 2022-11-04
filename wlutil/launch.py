@@ -139,10 +139,10 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
 
                 scriptCmd = f'script -f -c "{cmd}" {uartLog}'
 
-                if not silent and len(configs) == 1:
-                    jobProcs.append(sp.Popen(["screen", "-S", config['name'], "-m", "bash", "-c", scriptCmd], stderr=sp.STDOUT))
-                else:
-                    jobProcs.append(sp.Popen(["bash", "-c", scriptCmd], stderr=sp.STDOUT))
+                jobProcs.append(sp.Popen(["bash", "-c", scriptCmd], stderr=sp.STDOUT))
+                #if not silent and len(configs) == 1:
+                #else:
+                #    jobProcs.append(sp.Popen(["bash", "-c", scriptCmd], stderr=sp.STDOUT))
 
                 screenIdentifiers[config['name']] = config['name']
                 log.info('Opened screen session for {0} with identifier {1}'.format(config['name'], screenIdentifiers[config['name']]))
