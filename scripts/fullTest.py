@@ -157,7 +157,7 @@ def runTests(testNames, categoryName, marshalArgs=[], cmdArgs=[]):
     results = pool.starmap_async(func=_runTest, iterable=[(tName, categoryName, marshalArgs, cmdArgs) for tName in testNames])
     pool.close()
     pool.join()
-    failures = [result.get(timeout=3600) for result in results]
+    failures = [result for result in results.get(timeout=3600)]
 
     failure = []
     for f in failures:
@@ -207,7 +207,7 @@ def runSpecial(testNames, categoryName):
     
     pool.close()
     pool.join()
-    failures = [result.get(timeout=3600) for result in results]
+    failures = [result for result in results.get(timeout=3600)]
 
     failure = []
     for f in failures:
