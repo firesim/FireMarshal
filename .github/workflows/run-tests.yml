@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - master
+  push:
 
 env:
   REMOTE_WORK_DIR: /scratch/buildbot/firemarshal-ci-shared/firemarshal-${{ github.sha }}
