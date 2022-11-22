@@ -135,11 +135,11 @@ def _runTest(tName, categoryName, marshalArgs=[], cmdArgs=[]):
         # These log at level DEBUG (go to log file but not stdout)
         wlutil.run([marshalBin] + marshalArgs + ['clean', tPath], check=True)
         wlutil.run([marshalBin] + marshalArgs + ['test'] + cmdArgs + [tPath], check=True)
+        log.log(logging.INFO, "PASS")
     except sp.CalledProcessError as e:
         log.log(logging.INFO, "FAIL")
         failure = ("[{}]: {}".format(categoryName, tName), e)
 
-    log.log(logging.INFO, "PASS")
 
     return failure
 
@@ -159,12 +159,35 @@ def runTests(testNames, categoryName, marshalArgs=[], cmdArgs=[]):
     pool.join()
     failures = [result.get(timeout=3600) for result in results]
 
-    failure = ""
+    failure = []
     for f in failures:
         if  f != "":
-            failure += f
+            failure.append(f)
 
     return failure
+
+def _runSingleSpecial(tName, categoryName):
+    """Run the tests named in testNamed assuming they are special tests. Each
+    name should be a directory under firemarshal/test/ and should have a
+    test.py script that will be run and indicates pass/fail via return code.
+    The tests will be called as such: ./test.py pathToMarshalBin"""
+
+    log = logging.getLogger()
+
+    # Tuples of (testName, exception) for each failed test
+    failures = ""
+
+    log.log(logging.INFO, "[{}] {}:".format(categoryName, tName))
+    tPath = testDir / tName
+
+    try:
+        wlutil.run(["python3", tPath / "test.py", marshalBin], check=True, shell=True)
+        log.log(logging.INFO, "Special " + tName + " PASS")
+    except sp.CalledProcessError as e:
+        log.log(logging.INFO, "FAIL")
+        failures = (("[{}]: {}".format(categoryName, tName), e))
+
+    return failures
 
 
 def runSpecial(testNames, categoryName):
@@ -178,20 +201,20 @@ def runSpecial(testNames, categoryName):
     # Tuples of (testName, exception) for each failed test
     failures = []
 
-    for tName in testNames:
-        log.log(logging.INFO, "[{}] {}:".format(categoryName, tName))
-        tPath = testDir / tName
+    pool = mp.Pool(mp.cpu_count())
+    
+    results = pool.starmap_async(func=_runSingleSpecial, iterable=[(tName, categoryName) for tName in testNames])
+    
+    pool.close()
+    pool.join()
+    failures = [result.get(timeout=3600) for result in results]
 
-        try:
-            wlutil.run(["python3", tPath / "test.py", marshalBin], check=True, shell=True)
-        except sp.CalledProcessError as e:
-            log.log(logging.INFO, "FAIL")
-            failures.append(("[{}]: {}".format(categoryName, tName), e))
-            continue
+    failure = []
+    for f in failures:
+        if  f != "":
+            failure.append(f)
 
-        log.log(logging.INFO, "PASS")
-
-    return failures
+    return failure
 
 
 if __name__ == "__main__":
@@ -226,7 +249,7 @@ if __name__ == "__main__":
     if len(allFailures) > 0:
         log.info("Some tests failed:")
         for fail in allFailures:
-            log.info(fail[0])
+            log.info(fail)
         sys.exit(1)
     else:
         log.info("All PASS")

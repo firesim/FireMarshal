@@ -5,6 +5,8 @@ set -ex
 SPIKE_INSTALL=$PWD/spike_local
 mkdir -p $SPIKE_INSTALL
 
+pushd $SPIKE_INSTALL
+
 # Get a version of spike that includes the dummy_rocc accelerator
 if [ ! -d riscv-isa-sim ]; then
   git clone https://github.com/riscv/riscv-isa-sim.git
@@ -19,14 +21,15 @@ rm -rf riscv-isa-sim/build
 pushd riscv-isa-sim
 mkdir build
 pushd build
-../configure --with-fesvr=$RISCV --prefix=$SPIKE_INSTALL --with-boost=no --with-boost-asio=no --with-boost-regex=no
+../configure --with-fesvr=$RISCV --prefix=$SPIKE_INSTALL --with-boost=no --with-boost-asio=no --with-boost-regex=no 1>/dev/null
 popd
 popd
 
 pushd riscv-isa-sim/build
-make -j16
-make install
+make -j16 1>/dev/null
+make install 1>/dev/null
 popd
 
+popd
 # Build the benchmark
-make
+make 1>/dev/null
