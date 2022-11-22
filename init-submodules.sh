@@ -5,10 +5,6 @@
 #
 # You do not need to call this script if you only intend to build bare-metal workloads.
 
-git submodule update --init \
-  boards/default/linux \
-  boards/default/firmware/riscv-pk \
-  boards/default/firmware/opensbi \
-  wlutil/busybox \
-  boards/default/distros/br/buildroot \
-  boards/firechip/drivers/*
+git fetch --recurse-submodules -j5
+
+git submodule update --init --recursive
