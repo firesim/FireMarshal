@@ -425,7 +425,7 @@ def initialize():
     # Setup disk initramfs dirs
     for d in initramfs_disk_dirs:
         if not (ctx['initramfs-dir'] / 'disk' / d).exists():
-            (ctx['initramfs-dir'] / 'disk' / d).mkdir(parents=True)
+            (ctx['initramfs-dir'] / 'disk' / d).mkdir(parents=True, exist_ok=True)
 
 
 def getCtx():
