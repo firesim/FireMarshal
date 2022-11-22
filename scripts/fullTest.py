@@ -5,6 +5,7 @@ import argparse
 import time
 import logging
 import subprocess as sp
+import multiprocessing as mp
 import os
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -118,29 +119,45 @@ categoryTests = {
 }
 
 
-def runTests(testNames, categoryName, marshalArgs=[], cmdArgs=[]):
+def _runTest(tName, categoryName, marshalArgs=[], cmdArgs=[]):
     """Run the tests named in testNames. Logging will use categoryName to
     identify this set of tests. marshalArgs and cmdArgs are the arguments to
     pass to 'marshal' and 'marshal test', respectively."""
     log = logging.getLogger()
 
     # Tuples of (testName, exception) for each failed test
+    failure = ""
+
+    log.log(logging.INFO, "[{}] {}:".format(categoryName, tName))
+    tPath = testDir / (tName + ".yaml")
+
+    try:
+        # These log at level DEBUG (go to log file but not stdout)
+        wlutil.run([marshalBin] + marshalArgs + ['clean', tPath], check=True)
+        wlutil.run([marshalBin] + marshalArgs + ['test'] + cmdArgs + [tPath], check=True)
+    except sp.CalledProcessError as e:
+        log.log(logging.INFO, "FAIL")
+        failure = ("[{}]: {}".format(categoryName, tName), e)
+
+    log.log(logging.INFO, "PASS")
+
+    return failure
+
+
+def runTests(testNames, categoryName, marshalArgs=[], cmdArgs=[]):
+    """Run the tests named in testNames. Logging will use categoryName to
+    identify this set of tests. marshalArgs and cmdArgs are the arguments to
+    pass to 'marshal' and 'marshal test', respectively."""
+
+    # Tuples of (testName, exception) for each failed test
     failures = []
 
-    for tName in testNames:
-        log.log(logging.INFO, "[{}] {}:".format(categoryName, tName))
-        tPath = testDir / (tName + ".yaml")
+    pool = mp.Pool(mp.cpu_count())
 
-        try:
-            # These log at level DEBUG (go to log file but not stdout)
-            wlutil.run([marshalBin] + marshalArgs + ['clean', tPath], check=True)
-            wlutil.run([marshalBin] + marshalArgs + ['test'] + cmdArgs + [tPath], check=True)
-        except sp.CalledProcessError as e:
-            log.log(logging.INFO, "FAIL")
-            failures.append(("[{}]: {}".format(categoryName, tName), e))
-            continue
-
-        log.log(logging.INFO, "PASS")
+    results = pool.starmap_async(func=_runTest, iterable=[(tName, categoryName, marshalArgs, cmdArgs) for tName in testNames])
+    pool.close()
+    pool.join()
+    failures = [result for result in results.get(timeout=3600)]
 
     return failures
 
