@@ -59,7 +59,7 @@ jobs:
       - name: recover submodule commit hash
         id: recover_hash
         run: |
-          echo "subm-hash=`git submodule status riscv-linux | cut -d' ' -f1`" >> $GITHUB_ENV
+          echo "subm-hash=`git submodule status -- boards/default/linux | cut -d' ' -f1 | sed 's/^-//'`" >> $GITHUB_ENV
       - name: Setup repo copy
         run: |
           git clone $GITHUB_WORKSPACE ${{ env.REMOTE_WORK_DIR }}
