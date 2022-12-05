@@ -425,6 +425,7 @@ def initialize():
     # Setup disk initramfs dirs
     for d in initramfs_disk_dirs:
         if not (ctx['initramfs-dir'] / 'disk' / d).exists():
+            # there may be concurrency issues here with CI, thus marking exist_ok as true
             (ctx['initramfs-dir'] / 'disk' / d).mkdir(parents=True, exist_ok=True)
 
 
