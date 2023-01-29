@@ -296,25 +296,6 @@ should be absolute with respect to the workload rootfs. Files will be placed
 together in the output directory. You cannot specify the directory structure of
 the output.
 
-simulation_outputs
-^^^^^^^^^^^^^^^^^^^^^
-A list of simulation output files to copy after running firesim. Each path
-should be absolute with respect to the `sim_slot_*` directory.
-
-simulation_inputs
-^^^^^^^^^^^^^^^^^^^^^
-A list of simulation input files to provide to firesim before running simulations.
-Each path should be relative to the firemarshal top directory.
-
-.. Note:: `simulation_outputs` and `simulation_inputs` are specific to firesim 
-   workloads and hence should be wrapped with the `firesim` key.
-   ```
-   firesim: {
-      simulation_inputs: ["./images/br-base/br-base-bin-dwarf"],
-      simulation_outputs: ["memory_stats0.csv", "metasim_stderr.out"]
-   }
-   ```
-
 .. _workload-rootfs-size:
 
 rootfs-size
@@ -462,3 +443,25 @@ Set the amount of memory to use when launching or testing this workload in
 functional simulation. Does not affect the 'install' command. This value can be
 either a string with standard size annotations (e.g. "4GiB") or an integer
 representing the number of megabytes to use.
+
+Simulation Specific Configuration Options
+-------------------------------------------
+
+simulation_outputs
+^^^^^^^^^^^^^^^^^^^^^
+A list of simulation output files to copy after running Firesim. Each path
+should be absolute with respect to the `sim_slot_*` directory.
+
+simulation_inputs
+^^^^^^^^^^^^^^^^^^^^^
+A list of simulation input files to provide to Firesim before running simulations.
+Each path should be relative to the firemarshal top directory.
+
+.. Note:: `simulation_outputs` and `simulation_inputs` are specific to firesim
+   workloads and hence should be wrapped with the `firesim` key.
+   ```
+   firesim: {
+      simulation_inputs: ["./images/br-base/br-base-bin-dwarf"],
+      simulation_outputs: ["memory_stats0.csv", "metasim_stderr.out"]
+   }
+   ```
