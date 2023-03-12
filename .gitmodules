@@ -1,9 +1,6 @@
 [submodule "riscv-linux"]
 	path = boards/default/linux
 	url = https://github.com/firesim/linux.git
-[submodule "riscv-pk"]
-	path = boards/default/firmware/riscv-pk
-	url = https://github.com/riscv/riscv-pk.git
 [submodule "opensbi"]
 	path = boards/default/firmware/opensbi
 	url = https://github.com/riscv/opensbi.git
@@ -12,7 +9,7 @@
 	url = https://github.com/buildroot/buildroot.git
 [submodule "wlutil/busybox"]
 	path = wlutil/busybox
-	url = https://github.com/ucb-bar/busybox.git
+	url = https://github.com/mirror/busybox.git
 [submodule "boards/firechip/drivers/icenet-driver"]
 	path = boards/firechip/drivers/icenet-driver
 	url = https://github.com/firesim/icenet-driver.git

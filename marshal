@@ -34,6 +34,7 @@ def main():
     build_parser.add_argument('config_files', nargs='+', help="Configuration file(s) to use.")
     build_parser.add_argument('-B', '--binOnly', action='store_true', help="Only build the binary")
     build_parser.add_argument('-I', '--imgOnly', action='store_true', help="Only build the image (may require an image if you have guest-init scripts)")
+    build_parser.add_argument('-s', '--spike', action='store_true', help=argparse.SUPPRESS)
 
     # Launch command
     launch_parser = subparsers.add_parser(

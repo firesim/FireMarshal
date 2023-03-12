@@ -1,6 +1,5 @@
 import doit
 import shutil
-import tempfile
 import logging
 import os
 import subprocess as sp
@@ -57,7 +56,7 @@ def buildBusybox(config):
     shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', wlutil.getOpt('busybox-dir') / '.config')
     wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=wlutil.getOpt('busybox-dir'))
     shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'disk' / 'bin/')
-
+    shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin/')
     return True
 
 
@@ -173,7 +172,8 @@ def addDep(loader, config):
     loader.addTask({
         'name': 'build_busybox',
         'actions': [(buildBusybox, [config])],
-        'targets': [wlutil.getOpt('initramfs-dir') / 'disk' / 'bin' / 'busybox'],
+        'targets': [wlutil.getOpt('initramfs-dir') / 'disk' / 'bin' / 'busybox',
+                    wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin' / 'busybox'],
         'file_dep': [wlutil.getOpt('wlutil-dir') / 'busybox-config'],
         'uptodate': [wlutil.config_changed(wlutil.checkGitStatus(wlutil.getOpt('busybox-dir'))),
                      wlutil.config_changed(wlutil.getToolVersions())]
@@ -208,7 +208,7 @@ def addDep(loader, config):
         else:
             targets = [str(config['bin'])]
 
-        moddeps = [config.get('pk-src')]
+        moddeps = []
         if 'firmware' in config:
             moddeps.append(config['firmware']['source'])
 
@@ -390,6 +390,8 @@ def makeInitramfs(srcs, cpioDir, includeDevNodes=False):
     cpios = []
     for src in srcs:
         dst = cpioDir / (src.name + '.cpio')
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(dst)
         wlutil.toCpio(src, dst)
         cpios.append(dst)
 
@@ -398,6 +400,8 @@ def makeInitramfs(srcs, cpioDir, includeDevNodes=False):
 
     # Generate final cpio
     finalPath = cpioDir / 'initramfs.cpio'
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(finalPath)
     with open(finalPath, 'wb') as finalF:
         for cpio in cpios:
             with open(cpio, 'rb') as srcF:
@@ -477,29 +481,27 @@ def makeModules(cfg):
     wlutil.run(['depmod', '-b', str(wlutil.getOpt('initramfs-dir') / "drivers"), kernelVersion])
 
 
-def makeBBL(config, nodisk=False):
-    # BBL doesn't seem to detect changes in its configuration and won't rebuild if the payload path changes
-    bblBuild = config['firmware']['source'] / 'build'
-    if bblBuild.exists():
-        shutil.rmtree(bblBuild)
-    bblBuild.mkdir()
-
-    configureArgs = ['--host=riscv64-unknown-elf',
-                     '--with-payload=' + str(config['linux']['source'] / 'vmlinux')]
-
-    if 'bbl-build-args' in config['firmware']:
-        configureArgs += config['firmware']['bbl-build-args']
-
-    wlutil.run(['../configure'] + configureArgs, cwd=bblBuild)
-    wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=bblBuild)
-
-    return bblBuild / 'bbl'
-
-
 def makeOpenSBI(config, nodisk=False):
     payload = config['linux']['source'] / 'arch' / 'riscv' / 'boot' / 'Image'
+    size = payload.stat().st_size
+
+    # Sometimes static variables can exceed the size of the flat image
+    # Look in the vmlinux ELF for the max address, and use that if its greater
+    vmlinux = config['linux']['source'] / 'vmlinux'
+    # don't use wlutil.run, since we need to process the stdout
+    proc = sp.Popen(['readelf', '--segments', '--wide', vmlinux], stdout=sp.PIPE, universal_newlines=True)
+    proc.wait()
+    for line in iter(proc.stdout.readline, ''):
+        line = line.strip()
+        if "LOAD" in line:
+            cols = line.split()
+            base = int(cols[3], 16)
+            memsize = int(cols[5], 16)
+            if base + memsize > size:
+                size = base + memsize
+
     # Align to next MiB
-    payloadSize = ((payload.stat().st_size + 0xfffff) // 0x100000) * 0x100000
+    payloadSize = ((size + 0xfffff) // 0x100000) * 0x100000
     makeArgsOpts = ['PLATFORM=generic',
                     'FW_PAYLOAD_PATH=' + str(payload),
                     'FW_PAYLOAD_FDT_ADDR=0x$(shell printf "%X" '
@@ -544,31 +546,28 @@ def makeBin(config, nodisk=False):
             return doit.exceptions.TaskFailed(err)
 
         initramfsIncludes.append(wlutil.getOpt('initramfs-dir') / 'drivers')
-        with tempfile.TemporaryDirectory() as cpioDir:
-            cpioDir = pathlib.Path(cpioDir)
-            initramfsPath = ""
-            if nodisk:
-                initramfsIncludes += [wlutil.getOpt('initramfs-dir') / "nodisk"]
-                with wlutil.mountImg(config['img'], wlutil.getOpt('mnt-dir')):
-                    initramfsIncludes += [wlutil.getOpt('mnt-dir')]
-                    # This must be done while in the mountImg context
-                    initramfsPath = makeInitramfs(initramfsIncludes, cpioDir, includeDevNodes=True)
-            else:
-                initramfsIncludes += [wlutil.getOpt('initramfs-dir') / "disk"]
+        config['out-dir'].mkdir(parents=True, exist_ok=True)
+        cpioDir = config['out-dir']
+        cpioDir = pathlib.Path(cpioDir)
+        initramfsPath = ""
+        if nodisk:
+            initramfsIncludes += [wlutil.getOpt('initramfs-dir') / "nodisk"]
+            with wlutil.mountImg(config['img'], wlutil.getOpt('mnt-dir')):
+                initramfsIncludes = [wlutil.getOpt('mnt-dir')] + initramfsIncludes
+                # This must be done while in the mountImg context
                 initramfsPath = makeInitramfs(initramfsIncludes, cpioDir, includeDevNodes=True)
-
-            makeInitramfsKfrag(initramfsPath, cpioDir / "initramfs.kfrag")
-            generateKConfig(config['linux']['config'] + [cpioDir / "initramfs.kfrag"], config['linux']['source'])
-            wlutil.run(['make'] + wlutil.getOpt('linux-make-args') + ['vmlinux', 'Image', '-j' + str(wlutil.getOpt('jlevel'))], cwd=config['linux']['source'])
-            # copy files needed to build linux (busybox copying is put here so that it is shown per linux build)
-            config['out-dir'].mkdir(parents=True, exist_ok=True)
-            shutil.copy(config['linux']['source'] / '.config', config['out-dir'] / 'linux_config')
-            shutil.copy(wlutil.getOpt('busybox-dir') / '.config', config['out-dir'] / 'busybox_config')
-
-        if 'use-bbl' in config.get('firmware', {}) and config['firmware']['use-bbl']:
-            fw = makeBBL(config, nodisk)
         else:
-            fw = makeOpenSBI(config, nodisk)
+            initramfsIncludes += [wlutil.getOpt('initramfs-dir') / "disk"]
+            initramfsPath = makeInitramfs(initramfsIncludes, cpioDir, includeDevNodes=True)
+
+        makeInitramfsKfrag(initramfsPath, cpioDir / "initramfs.kfrag")
+        generateKConfig(config['linux']['config'] + [cpioDir / "initramfs.kfrag"], config['linux']['source'])
+        wlutil.run(['make'] + wlutil.getOpt('linux-make-args') + ['vmlinux', 'Image', '-j' + str(wlutil.getOpt('jlevel'))], cwd=config['linux']['source'])
+        # copy files needed to build linux (busybox copying is put here so that it is shown per linux build)
+        shutil.copy(config['linux']['source'] / '.config', config['out-dir'] / 'linux_config')
+        shutil.copy(wlutil.getOpt('busybox-dir') / '.config', config['out-dir'] / 'busybox_config')
+
+        fw = makeOpenSBI(config, nodisk)
 
         config['bin'].parent.mkdir(parents=True, exist_ok=True)
         config['dwarf'].parent.mkdir(parents=True, exist_ok=True)
