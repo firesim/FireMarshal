@@ -33,7 +33,7 @@ class Builder:
                 'builder': self
                 }
 
-    def buildBaseImage(self):
+    def buildBaseImage(self, task, changed):
         raise NotImplementedError("Baremetal workloads currently do not support disk images")
 
     def upToDate(self):

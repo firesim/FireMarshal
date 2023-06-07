@@ -326,7 +326,7 @@ def buildDepGraph(cfgs):
         if config['isDistro'] and 'img' in config:
             loader.addTask({
                     'name': str(config['img']),
-                    'actions': [(config['builder'].buildBaseImage, [])],
+                    'actions': [(config['builder'].buildBaseImage)],
                     'targets': [config['img']],
                     'file_dep': config['builder'].fileDeps(),
                     'uptodate': (config['builder'].upToDate() +

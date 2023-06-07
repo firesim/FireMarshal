@@ -52,7 +52,7 @@ class Builder:
                 'img': fed_dir / "rootfs.img"
                 }
 
-    def buildBaseImage(self):
+    def buildBaseImage(self, task, changed):
         wlutil.run(['make', "rootfs.img"], cwd=fed_dir)
 
     def fileDeps(self):
