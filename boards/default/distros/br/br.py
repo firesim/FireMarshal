@@ -30,7 +30,8 @@ def get_url(file_path):
     return f"{URL_PREFIX}/main/{file_path}"
 
 
-def make_relative(path_str):
+def make_relative(path):
+    path_str = str(path)
     return path_str.replace(str(fm_dir) + "/", "")
 
 
@@ -207,7 +208,7 @@ class Builder:
                 urllib.request.urlretrieve(cached_url, cached_local)
                 break
             except Exception as e:
-                log.debug(f"urlretrieve exception: {doit.exceptions.TaskFailed(e)}")
+                log.debug(f"urlretrieve exception: {e}")
             time.sleep(3)
 
         if os.path.exists(cached_local):
