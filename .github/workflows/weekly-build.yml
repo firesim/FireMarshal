@@ -1,0 +1,76 @@
+name: weekly-build
+
+on:
+  schedule:
+    - cron: "0 0 12 ? * MON *"
+
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
+env:
+  REMOTE_WORK_DIR: /scratch/buildbot/firemarshal-ci-shared/firemarshal-${{ github.sha }}
+  PERSONAL_ACCESS_TOKEN: ${{ secrets.FIREMARSHAL_BR_UPLOAD_GH_PERSONAL_ACCESS_KEY }}
+
+jobs:
+  setup-repo:
+    name: setup-repo
+    needs: change-filters
+    if: needs.change-filters.outputs.run-core == 'true'
+    runs-on: local-fpga
+    steps:
+      - name: Delete old checkout
+        run: |
+            ls -alh .
+            rm -rf ${{ env.REMOTE_WORK_DIR }}/* || true
+            rm -rf ${{ env.REMOTE_WORK_DIR }}/.* || true
+            rm -rf ${{ github.workspace }}/* || true
+            rm -rf ${{ github.workspace }}/.* || true
+      - uses: actions/checkout@v3
+      - name: Setup repo copy
+        run: |
+          git clone $GITHUB_WORKSPACE ${{ env.REMOTE_WORK_DIR }}
+      - name: Setup conda (install all deps)
+        run: |
+          cd ${{ env.REMOTE_WORK_DIR }}
+          conda env create -f ./conda-reqs.yaml -p ./.conda-env
+          eval "$(conda shell.bash hook)"
+          conda install -y -p $PWD/.conda-env -c ucb-bar riscv-tools=1.0.4
+      - name: Initialize all submodules
+        run: |
+          cd ${{ env.REMOTE_WORK_DIR }}
+          eval "$(conda shell.bash hook)"
+          conda activate $PWD/.conda-env
+          ./init-submodules.sh
+      - name: Verify open file limits
+        run: |
+          HARD_LIMIT=$(ulimit -Hn)
+          REQUIRED_LIMIT=16384
+          if [ "$HARD_LIMIT" -lt "$REQUIRED_LIMIT" ]; then
+              echo "ERROR: Your system does not support an open files limit (the output of 'ulimit -Sn' and 'ulimit -Hn') of at least $REQUIRED_LIMIT, which is required to workaround a bug in buildroot. You will not be able to build a Linux distro with FireMarshal until this is addressed."
+              exit 1
+          fi
+          ulimit -Sn $(ulimit -Hn)
+
+  build-upload-br-image:
+    name: run-tests
+    needs: [setup-repo]
+    runs-on: local-fpga
+    steps:
+      - name: Build buildroot image
+        run: |
+          cd ${{ env.REMOTE_WORK_DIR }}
+          eval "$(conda shell.bash hook)"
+          conda activate $PWD/.conda-env
+          ./marshal -v build br-base.json
+          ./scripts/upload-br-image.py
+
+  cleanup:
+    name: cleanup
+    needs: [setup-repo, build-upload-br-image]
+    runs-on: local-fpga
+    if: ${{ always() }}
+    steps:
+      - name: Delete repo copy and conda env
+        run: |
+           rm -rf ${{ env.REMOTE_WORK_DIR }}
