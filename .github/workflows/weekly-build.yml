@@ -53,7 +53,7 @@ jobs:
           ulimit -Sn $(ulimit -Hn)
 
   build-upload-br-image:
-    name: run-tests
+    name: build-upload-br-image
     needs: [setup-repo]
     runs-on: local-fpga
     steps:

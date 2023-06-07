@@ -110,7 +110,7 @@ jobs:
           ulimit -Sn $(ulimit -Hn)
 
   build-upload-br-image:
-    name: run-tests
+    name: build-upload-br-image
     needs: [setup-repo]
     if: ${{ github.ref == 'master' }}
     runs-on: local-fpga
