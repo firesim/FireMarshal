@@ -61,7 +61,7 @@ jobs:
     name: setup-repo
     needs: change-filters
     if: needs.change-filters.outputs.run-core == 'true'
-    runs-on: local-fpga
+    runs-on: firemarshal
     steps:
       - name: Delete old checkout
         run: |
@@ -113,7 +113,7 @@ jobs:
     name: build-upload-br-image
     needs: [setup-repo]
     if: ${{ github.ref == 'master' }}
-    runs-on: local-fpga
+    runs-on: firemarshal
     steps:
       - name: Build buildroot image
         run: |
@@ -126,7 +126,7 @@ jobs:
   run-tests:
     name: run-tests
     needs: [setup-repo]
-    runs-on: local-fpga
+    runs-on: firemarshal
     steps:
       - name: Run tests (- spike tests)
         run: |
@@ -143,7 +143,7 @@ jobs:
   cleanup:
     name: cleanup
     needs: [setup-repo, build-upload-br-image, run-tests]
-    runs-on: local-fpga
+    runs-on: firemarshal
     if: ${{ always() }}
     steps:
       - name: Delete repo copy and conda env

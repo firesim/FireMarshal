@@ -62,7 +62,7 @@ exit""")
 
 
 def hashOpts(opts):
-    """Return a unique description of this builder, based on the provided opts"""
+    """Return a unique description of this builder, based on the provided opts and sha of buildroot"""
 
     if len(opts) == 0:
         return None
@@ -77,6 +77,9 @@ def hashOpts(opts):
         # use the relative path for the hash (so it is reproducible across machines)
         env_str = make_relative(str(opts['environment']))
         h.update(env_str.encode('utf-8'))
+
+    gs = wlutil.checkGitStatus(br_dir / 'buildroot')
+    h.update(gs['sha'].encode('utf-8'))
 
     return h.hexdigest()[0:4]
 
@@ -208,7 +211,10 @@ class Builder:
 
         if os.path.exists(cached_local):
             assert len(task.targets) == 1, "Multiple targets detected for buildroot"
-            if not os.path.exists(task.targets[0]) and not changed:
+            target_not_exists = not os.path.exists(task.targets[0])
+            file_dep_changed = not changed
+            log.debug(f"Target exists: {target_not_exists}, File Dep(s) Changed: {file_dep_changed} {changed}")
+            if target_not_exists and file_dep_changed:
                 log.info(f"Attempting to use cached image: {cached_local}")
                 # check if cached img is sufficient
                 if not wlutil.checkGitStatus(br_dir / 'buildroot')['dirty']:
@@ -216,7 +222,7 @@ class Builder:
                         self.outputImg.parent.mkdir(parents=True, exist_ok=True)
                         zip_ref.extractall(self.outputImg.parent)
                     os.remove(cached_local)
-                    log.info(f"Skipping full buildroot build. Using cached image: {cached_local}")
+                    log.info(f"Skipping full buildroot build. Using cached image {self.outputImg} from {cached_local}")
                     return
             os.remove(cached_local)
 

@@ -68,8 +68,9 @@ def upload_binary_file(local_file_path, gh_file_path):
     return r['commit'].sha
 
 
-def make_relative(path_str):
-    return path_str.replace(str(fm_dir) + "/", "")
+def make_relative(path):
+    path_str = str(path)
+    return path_str.replace(f"{fm_dir}/", "")
 
 
 # only caches firechip board br images
@@ -79,7 +80,6 @@ for e in (fm_dir / 'images' / 'firechip').iterdir():
             if ie.is_file() and ie.suffix == '.img' and "br." in ie.name:
                 ie_zip = str(ie) + ".zip"
                 with zipfile.ZipFile(ie_zip, 'w', zipfile.ZIP_BZIP2, compresslevel=9) as zip_ref:
-                    zip_ref.write(ie)
-                print(ie_zip)
+                    zip_ref.write(ie, ie.name)
                 upload_binary_file(ie_zip, make_relative(ie_zip))
                 os.remove(ie_zip)
