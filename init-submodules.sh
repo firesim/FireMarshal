@@ -4,8 +4,9 @@
 # if they need them.
 #
 # You do not need to call this script if you only intend to build bare-metal workloads.
+set -x
 
-git submodule update --init \
+git submodule update --progress --filter=tree:0 --init \
   boards/default/linux \
   boards/default/firmware/opensbi \
   wlutil/busybox \
