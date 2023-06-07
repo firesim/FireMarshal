@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 from pathlib import Path
 import os
 from github import Github
@@ -13,6 +12,7 @@ fm_dir = script_dir.parent
 GH_REPO = 'firemarshal-public-br-images'
 GH_ORG = 'firesim'
 URL_PREFIX = f"https://raw.githubusercontent.com/{GH_ORG}/{GH_REPO}"
+
 
 # taken from https://stackoverflow.com/questions/63427607/python-upload-files-directly-to-github-using-pygithub
 # IMPORTANT: only works for binary files! (i.e. tar.gz or zip files)
@@ -30,7 +30,7 @@ def upload_binary_file(local_file_path, gh_file_path):
             contents.extend(repo.get_contents(file_content.path))
         else:
             file = file_content
-            all_files.append(str(file).replace('ContentFile(path="','').replace('")',''))
+            all_files.append(str(file).replace('ContentFile(path="', '').replace('")', ''))
 
     with open(local_file_path, 'rb') as file:
         content = file.read()
@@ -67,8 +67,10 @@ def upload_binary_file(local_file_path, gh_file_path):
 
     return r['commit'].sha
 
+
 def make_relative(path_str):
     return path_str.replace(str(fm_dir) + "/", "")
+
 
 # only caches firechip board br images
 for e in (fm_dir / 'images' / 'firechip').iterdir():

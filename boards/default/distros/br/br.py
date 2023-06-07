@@ -25,11 +25,14 @@ GH_REPO = 'firemarshal-public-br-images'
 GH_ORG = 'firesim'
 URL_PREFIX = f"https://raw.githubusercontent.com/{GH_ORG}/{GH_REPO}"
 
+
 def get_url(file_path):
     return f"{URL_PREFIX}/main/{file_path}"
 
+
 def make_relative(path_str):
     return path_str.replace(str(fm_dir) + "/", "")
+
 
 initTemplate = string.Template("""#!/bin/sh
 
