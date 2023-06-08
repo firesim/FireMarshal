@@ -736,7 +736,7 @@ def checkGitStatus(submodule):
                 'sha': "",
                 'dirty': False,
                 "init": False,
-                "rebuild": ""
+                "rebuild": "",
                 }
 
     try:
@@ -747,13 +747,13 @@ def checkGitStatus(submodule):
                 'sha': "",
                 'dirty': True,
                 "init": False,
-                "rebuild": random.random()
+                "rebuild": random.random(),
                 }
 
     status = {
-            'init': True,
             'sha': repo.head.object.hexsha,
-            'dirty': repo.is_dirty()
+            'dirty': repo.is_dirty(),
+            'init': True,
             }
     if repo.is_dirty():
         # In the absense of a clever way to record changes, we must assume that

@@ -1,13 +1,22 @@
 name: run-tests
 
 on:
+  # run ci when the following branches are pushed to (i.e. after merge)
+  push:
+    branches:
+      - master
   # run ci when pring to following branches (note: ci runs on the merge commit of the pr!)
   pull_request:
     branches:
       - master
 
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
 env:
   REMOTE_WORK_DIR: /scratch/buildbot/firemarshal-ci-shared/firemarshal-${{ github.sha }}
+  PERSONAL_ACCESS_TOKEN: ${{ secrets.FIREMARSHAL_BR_UPLOAD_GH_PERSONAL_ACCESS_KEY }}
 
 jobs:
   cancel-prior-workflows:
@@ -52,7 +61,7 @@ jobs:
     name: setup-repo
     needs: change-filters
     if: needs.change-filters.outputs.run-core == 'true'
-    runs-on: self-hosted
+    runs-on: firemarshal
     steps:
       - name: Delete old checkout
         run: |
@@ -61,7 +70,7 @@ jobs:
             rm -rf ${{ env.REMOTE_WORK_DIR }}/.* || true
             rm -rf ${{ github.workspace }}/* || true
             rm -rf ${{ github.workspace }}/.* || true
-      
+
       - uses: actions/checkout@v3
       - name: Setup repo copy
         run: |
@@ -100,10 +109,24 @@ jobs:
           fi
           ulimit -Sn $(ulimit -Hn)
 
+  build-upload-br-image:
+    name: build-upload-br-image
+    needs: [setup-repo]
+    if: ${{ github.ref == 'master' }}
+    runs-on: firemarshal
+    steps:
+      - name: Build buildroot image
+        run: |
+          cd ${{ env.REMOTE_WORK_DIR }}
+          eval "$(conda shell.bash hook)"
+          conda activate $PWD/.conda-env
+          ./marshal -v build br-base.json
+          ./scripts/upload-br-image.py
+
   run-tests:
     name: run-tests
     needs: [setup-repo]
-    runs-on: self-hosted
+    runs-on: firemarshal
     steps:
       - name: Run tests (- spike tests)
         run: |
@@ -119,9 +142,9 @@ jobs:
 
   cleanup:
     name: cleanup
-    needs: [setup-repo, run-tests]
-    runs-on: self-hosted
-    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+    needs: [setup-repo, build-upload-br-image, run-tests]
+    runs-on: firemarshal
+    if: ${{ always() }}
     steps:
       - name: Delete repo copy and conda env
         run: |

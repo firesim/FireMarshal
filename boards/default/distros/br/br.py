@@ -6,15 +6,34 @@ import doit
 import hashlib
 import wlutil
 import re
+import zipfile
+import urllib.request
+import time
+import logging
 
 # Note: All argument paths are expected to be absolute paths
 
 # Some common directories for this module (all absolute paths)
 br_dir = pathlib.Path(__file__).parent
+fm_dir = br_dir.parents[3]
 overlay = br_dir / 'overlay'
 
 # Buildroot puts its output images here
 img_dir = br_dir / 'buildroot' / 'output' / 'images'
+
+GH_REPO = 'firemarshal-public-br-images'
+GH_ORG = 'firesim'
+URL_PREFIX = f"https://raw.githubusercontent.com/{GH_ORG}/{GH_REPO}"
+
+
+def get_url(file_path):
+    return f"{URL_PREFIX}/main/{file_path}"
+
+
+def make_relative(path):
+    path_str = str(path)
+    return path_str.replace(str(fm_dir) + "/", "")
+
 
 initTemplate = string.Template("""#!/bin/sh
 
@@ -44,7 +63,7 @@ exit""")
 
 
 def hashOpts(opts):
-    """Return a unique description of this builder, based on the provided opts"""
+    """Return a unique description of this builder, based on the provided opts and sha of buildroot"""
 
     if len(opts) == 0:
         return None
@@ -56,7 +75,13 @@ def hashOpts(opts):
                 h.update(cf.read())
 
     if 'environment' in opts:
-        h.update(str(opts['environment']).encode('utf-8'))
+        # use the relative path for the hash (so it is reproducible across machines)
+        env_str = make_relative(str(opts['environment']))
+        h.update(env_str.encode('utf-8'))
+
+    gs = wlutil.checkGitStatus(br_dir / 'buildroot')
+    # if the repo is dirty this hash will always be different from the prior run
+    h.update(str(gs).encode('utf-8'))
 
     return h.hexdigest()[0:4]
 
@@ -164,11 +189,48 @@ class Builder:
         wlutil.run([mergeScript] + kFrags, cwd=(br_dir / 'buildroot'), env=env)
 
     # Build a base image in the requested format and return an absolute path to that image
-    def buildBaseImage(self):
+    def buildBaseImage(self, task, changed):
         """Ensures that the image file specified by baseConfig() exists and is up to date.
 
         This is called as a doit task.
+        See more information about the arguments here (or in the source code): https://pydoit.org/tasks.html#keywords-with-task-metadata
+
+        Args:
+            task: a Task object instance (all metadata about the "task" being run) - see doit's task.py source for the variable list
+            changed: list of file depencies that have changed since the last successful execution
         """
+        log = logging.getLogger()
+
+        # optimization to get cached br distro image
+        img_rel_path = make_relative(str(self.outputImg))
+        cached_url = get_url(img_rel_path + ".zip")
+        cached_local = f"{br_dir}/{self.outputImg.name}.zip"
+
+        # try N times then move on
+        for i in range(3):
+            try:
+                log.info(f"Attempting to download cached image: {cached_url}")
+                urllib.request.urlretrieve(cached_url, cached_local)
+                break
+            except Exception as e:
+                log.debug(f"urlretrieve exception: {e}")
+            time.sleep(3)
+
+        if os.path.exists(cached_local):
+            assert len(task.targets) == 1, "Multiple targets detected for buildroot"
+            target_doesnt_exist = not os.path.exists(task.targets[0])
+            file_deps_not_changed = not changed
+            log.debug(f"Target doesn't exist: {target_doesnt_exist}, File dep(s) not changed: {file_deps_not_changed} {changed}")
+            if target_doesnt_exist and file_deps_not_changed:
+                log.info(f"Unzipping cached image: {cached_local}")
+                with zipfile.ZipFile(cached_local, 'r') as zip_ref:
+                    self.outputImg.parent.mkdir(parents=True, exist_ok=True)
+                    zip_ref.extractall(self.outputImg.parent)
+                os.remove(cached_local)
+                log.info(f"Skipping full buildroot build. Using cached image {self.outputImg} from {cached_local}")
+                return
+            os.remove(cached_local)
+
         try:
             wlutil.checkSubmodule(br_dir / 'buildroot')
 

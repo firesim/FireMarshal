@@ -9,7 +9,7 @@ platforms:
 
 dependencies:
     - qemu # from ucb-bar channel - https://github.com/ucb-bar/qemu-feedstock
-    - python>=3.8
+    - python>=3.9
     - rsync
     - psutil
     - doit>=0.34
@@ -31,7 +31,7 @@ dependencies:
     - gxx
     - conda-gcc-specs
     - binutils
-    - sysroot_linux-64>=2.17
+    - sysroot_linux-64=2.17
     - patch
     - which
     - sed
@@ -46,3 +46,4 @@ dependencies:
     - wget
     - findutils
     - lzop
+    - pygithub
