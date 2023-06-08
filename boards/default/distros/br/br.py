@@ -193,6 +193,11 @@ class Builder:
         """Ensures that the image file specified by baseConfig() exists and is up to date.
 
         This is called as a doit task.
+        See more information about the arguments here (or in the source code): https://pydoit.org/tasks.html#keywords-with-task-metadata
+
+        Args:
+            task: a Task object instance (all metadata about the "task" being run) - see doit's task.py source for the variable list
+            changed: list of file depencies that have changed since the last successful execution
         """
         log = logging.getLogger()
 
