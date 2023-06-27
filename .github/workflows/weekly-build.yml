@@ -16,7 +16,6 @@ env:
 jobs:
   setup-repo:
     name: setup-repo
-    needs: change-filters
     if: needs.change-filters.outputs.run-core == 'true'
     runs-on: firemarshal
     steps:
