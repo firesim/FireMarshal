@@ -9,7 +9,7 @@ mkdir -p $SPIKE_INSTALL
 if [ ! -d riscv-isa-sim ]; then
   git clone https://github.com/riscv/riscv-isa-sim.git
   pushd riscv-isa-sim
-  git checkout 5a50590f25a932cc1f25fe78b9912e9661d37d30
+  git checkout e9848ed3056eba91a5f0d15539358e5a03c66011
   popd
 fi
 
