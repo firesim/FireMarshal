@@ -16,7 +16,7 @@ defaults:
 
 env:
   REMOTE_WORK_DIR: /scratch/buildbot/firemarshal-ci-shared/firemarshal-${{ github.sha }}
-  PERSONAL_ACCESS_TOKEN: ${{ secrets.FIREMARSHAL_BR_UPLOAD_GH_PERSONAL_ACCESS_KEY }}
+  PERSONAL_ACCESS_TOKEN: ${{ secrets.BARTENDER_PERSONAL_ACCESS_TOKEN }}
 
 jobs:
   cancel-prior-workflows:
