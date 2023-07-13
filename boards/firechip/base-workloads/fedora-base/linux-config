@@ -21,7 +21,7 @@ CONFIG_NR_CPUS=32
 # CONFIG_PCI is not set
 # CONFIG_POWER_SUPPLY is not set
 # CONFIG_SCSI is not set
-# CONFIG_SERIAL_SIFIVE is not set
+CONFIG_SERIAL_SIFIVE=y
 # CONFIG_SOC_SIFIVE is not set
 # CONFIG_SPI is not set
 # CONFIG_USB_SUPPORT is not set
