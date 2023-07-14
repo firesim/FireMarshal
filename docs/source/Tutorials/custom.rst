@@ -110,6 +110,76 @@ known good output of "Hello World!".
 
 .. todo:: Add (or link to) more detailed examples of bare-metal and rocc workloads.
 
+
+Using the same directory structure for both bare-metal and buildroot
+-----------------------------------------------------------------------
+In this step, we will see how we can use the same directory structure for both 
+baremetal and buildroot.
+
+
+First, we will build a "Hello World" binary for buildroot. 
+Lets take a look at ``example-workloads/example-br.json``.
+
+.. include:: example-workloads/example-br.json
+   :code: json
+
+First you will see the ``name`` field set to ``example-br``. This indicates that 
+the directory that we will be working on. Next, you will see that our 
+base workload is set to buildroot by setting ``base`` to ``br-base.json``.
+
+The ``overlay`` field indicates the directory to overlay on the rootfs 
+which is under ``example-br/overlay``. That is, you will see a ``/root/hello-world``
+directory once you boot linux with this built workload. The files under ``overlay/root/hello-world/``
+are also copied into the file system. One caveat is that the overlay directory structure 
+has to match the rootfs directory structure.
+
+The ``host-init`` field indicates the script to run while building the workload.
+If you look into ``example-br/host-init.sh`` you can see that it runs a ``make``
+command to cross-compile our "Hello World" binary.
+
+.. include:: example-workloads/example-br/host-init.sh
+   :code: bash
+
+Finally the workload consists of individual ``jobs``. The ``outputs`` field
+specifies the files that you want to copy out from the file system after the
+simulation has ended. ``run`` sets the script to run on the target once the
+simulation starts. If you take a look into ``example-br/run.sh``, you can see
+that it is executing our "Hello World" binary and terminating the simulation by
+runnint ``poweroff``.
+
+.. include:: example-workloads/example-br/run.sh
+   :code: bash
+
+
+We are ready to build and install the workload for FireSim!
+
+::
+
+  ./marshal -v build example-workloads/example-br.json
+  ./marshal -v install example-workloads/example-br.json
+
+
+Now lets see how we can reuse this directory structure to run a baremetal simulation.
+
+.. include:: example-workloads/example-baremetal.json
+   :code: json
+
+As the buildroot case, you will see that the ``name`` field is set to ``example-br``.
+Now, we configure our ``base`` to ``bare-base.json`` to indicate that we will building
+a baremetal workload. In addition, we can reuse the ``host-init.sh`` script as before 
+to compile our "Hello World" binary. Last but not least, we set the boot binary
+by the ``bin`` field. The path to the file should be relative to the ``example-br`` directory.
+Hence it is ``overlay/root/hello-world/hello-world.riscv`` in our example.
+
+
+Now we can build and install our baremetal workload for FireSim!
+
+::
+
+  ./marshal -v build example-workloads/example-baremetal.json
+  ./marshal -v install example-workloads/example-baremetal.json
+
+
 Next Steps
 -------------------
 For more examples, you can look in the ``test/`` directory. The full set of

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 cd root/hello-world
-./hello-world > target.out
+./hello-world.riscv > target.out
 poweroff
