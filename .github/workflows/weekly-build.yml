@@ -32,9 +32,9 @@ jobs:
       - name: Setup conda (install all deps)
         run: |
           cd ${{ env.REMOTE_WORK_DIR }}
-          conda env create -f ./conda-reqs.yaml -p ./.conda-env
           eval "$(conda shell.bash hook)"
-          conda install -y -p $PWD/.conda-env -c ucb-bar riscv-tools=1.0.4
+          conda-lock --conda $(which conda) -f ./conda-reqs.yaml -f ./.github/riscv-tools.yaml -p linux-64
+          conda-lock install --conda $(which conda) -p $PWD/.conda-env
       - name: Initialize all submodules
         run: |
           cd ${{ env.REMOTE_WORK_DIR }}
