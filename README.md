@@ -22,32 +22,29 @@ To run FireMarshal independently, follow along from the next section (Standalone
 
 FireMarshal uses the [Conda](https://docs.conda.io/en/latest/) package manager to help manage system dependencies.
 This allows users to create an "environment" that holds system dependencies like ``make``, ``git``, etc.
-Please install Conda using the Chipyard documentation [here](https://chipyard.readthedocs.io/en/main/Chipyard-Basics/Initial-Repo-Setup.html#default-requirements-installation).
+Additionally, FireMarshal uses [Conda Lock](https://conda.github.io/conda-lock/) to generate lock files for Conda environments.
+Please install Conda and Conda Lock using the Chipyard documentation [here](https://chipyard.readthedocs.io/en/main/Chipyard-Basics/Initial-Repo-Setup.html#default-requirements-installation).
 
-Next you can run the following command to create a FireMarshal environment called ``firemarshal``.
+Next you can run the following commands to create a FireMarshal environment called ``firemarshal`` with a RISC-V compatible toolchain:
 
 ```bash
-conda env create -f ./conda-reqs.yaml -n firemarshal
+conda-lock --conda $(which conda) -f ./conda-reqs.yaml -f ./riscv-tools.yaml -p linux-64
+conda-lock install --conda $(which conda) -n firemarshal
 ```
 
 To enter this environment, you then run the ``activate`` command.
 **Note that this command should be run whenever you want to use FireMarshal so that packages can be properly be added to your ``PATH``**.
 
 ```bash
-conda activate firemarshal # or whatever name you gave during environment creation
+conda activate firemarshal # or whatever name/prefix you gave during environment creation
 ```
 
-In addition to standard packages added in the conda environment, you will need a RISC-V compatible toolchain and the RISC-V ISA simulator (Spike).
-A RISC-V compatible toolchain can be obtained by the following:
-
-```bash
-conda install -n firemarshal -c ucb-bar riscv-tools
-```
-
+In addition to standard packages added in the conda environment, you will need the RISC-V ISA simulator (Spike).
 To install Spike, please refer to https://github.com/riscv-software-src/riscv-isa-sim.
 
 Finally, if you are running as a user on a machine without ``sudo`` access it is required for you to install ``guestmount`` for disk manipulation.
 You can install this through your default package manager (for ex. ``apt`` or ``yum``).
+You can also follow along with the ``guestmount`` [installation instructions found in the FireSim project](https://docs.fires.im/en/stable/Getting-Started-Guides/On-Premises-FPGA-Getting-Started/Initial-Setup/RHS-Research-Nitefury-II.html?highlight=guestmount#install-guestmount).
 
 ## Basic Usage
 
