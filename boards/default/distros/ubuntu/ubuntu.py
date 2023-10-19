@@ -15,10 +15,10 @@ ExecStart=/etc/firesim/{scriptName} {scriptArgs}
 StandardOutput=journal+console"""
 
 # Some common directories for this module (all absolute paths)
-fed_dir = pathlib.Path(__file__).resolve().parent
+ubuntu_dir = pathlib.Path(__file__).resolve().parent
 
 # Temporary overlay used for applying init scripts
-overlay = fed_dir / 'overlay'
+overlay = ubuntu_dir / 'overlay'
 
 
 # Fedora doesn't support any options
@@ -47,13 +47,13 @@ class Builder:
                     'name': 'ubuntu',
                     'opts': {}
                 },
-                'workdir': fed_dir,
+                'workdir': ubuntu_dir,
                 'builder': self,
-                'img': fed_dir / "rootfs.img"
+                'img': ubuntu_dir / "rootfs.img"
                 }
 
     def buildBaseImage(self, task, changed):
-        wlutil.run(['make', "rootfs.img"], cwd=fed_dir)
+        wlutil.run(['make', "rootfs.img"], cwd=ubuntu_dir)
 
     def fileDeps(self):
         return []
@@ -62,7 +62,7 @@ class Builder:
     # rebuilt.
     def upToDate(self):
         def checkMake():
-            retcode = sp.call('make -q rootfs.img', shell=True, cwd=fed_dir)
+            retcode = sp.call('make -q rootfs.img', shell=True, cwd=ubuntu_dir)
             if retcode == 0:
                 return True
             else:
