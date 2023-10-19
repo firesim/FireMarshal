@@ -1,1 +1,1 @@
-LABEL=_/  / ext4    defaults,noatime,x-systemd.device-timeout=300s,x-systemd.mount-timeout=300s 0 0
+/home/centos/firesim/target-design/chipyard/software/firemarshal/boards/default/distros/fedora/overlay/etc/fstab
