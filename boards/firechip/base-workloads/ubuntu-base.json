@@ -1,6 +1,7 @@
 {
   "name" : "ubuntu-base",
   "guest-init": "initRepos.sh",
+  "rootfs-size": "8GB",
   "distro" : {
       "name" : "ubuntu",
       "opts" : {}
