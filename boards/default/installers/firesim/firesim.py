@@ -3,6 +3,7 @@ import logging
 import pathlib
 import os
 import wlutil
+import shutil
 
 moduleDir = pathlib.Path(__file__).resolve().parent
 
@@ -69,7 +70,9 @@ def install(targetCfg, opts):
                 if 'simulation_outputs' in jCfg['firesim']:
                     wls[slot]["simulation_outputs"] = [f.as_posix() for f in jCfg['firesim']['simulation_outputs']]
                 if 'simulation_inputs' in jCfg['firesim']:
-                    wls[slot]["simulation_inputs"] = [f.as_posix() for f in jCfg['firesim']['simulation_inputs']]
+                    wls[slot]["simulation_inputs"] = [os.path.basename(f.as_posix()) for f in jCfg['firesim']['simulation_inputs']]
+                    for f in jCfg['firesim']['simulation_inputs']:
+                      shutil.copy(f, os.path.join(fsTargetDir, os.path.basename(f)))
 
         fsCfg['workloads'] = wls
     else:
@@ -88,7 +91,9 @@ def install(targetCfg, opts):
             if 'simulation_outputs' in targetCfg['firesim']:
                 fsCfg["common_simulation_outputs"] = [f.as_posix() for f in targetCfg['firesim']['simulation_outputs']]
             if 'simulation_inputs' in targetCfg['firesim']:
-                fsCfg["common_simulation_inputs"] = [f.as_posix() for f in targetCfg['firesim']['simulation_inputs']]
+                fsCfg["common_simulation_inputs"] = [os.path.basename(f.as_posix()) for f in targetCfg['firesim']['simulation_inputs']]
+                for f in targetCfg['firesim']['simulation_inputs']:
+                    shutil.copy(f, os.path.join(fsTargetDir, os.path.basename(f)))
 
     with open(str(fsTargetDir / "README"), 'w') as readme:
         readme.write(readmeTxt)
