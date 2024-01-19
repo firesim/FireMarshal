@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: ./resize.sh FEDORA_IMAGE NEW_SIZE_IN_BYTES
+# Usage: ./resize.sh UBUNTU_IMAGE NEW_SIZE_IN_BYTES
 
 IMG=$1
 NEWSZ=$(numfmt --from=iec $2)
