@@ -1,0 +1,21 @@
+{
+  "name" : "ubuntu-base",
+  "guest-init": "initRepos.sh",
+  "rootfs-size": "8GB",
+  "distro" : {
+      "name" : "ubuntu",
+      "opts" : {}
+  },
+  "overlay" : "overlay",
+  "linux" : {
+      "source" : "../../linux",
+      "config" : "linux-config",
+      "modules" : {
+          "icenet" : "../../drivers/icenet-driver",
+          "iceblk" : "../../drivers/iceblk-driver"
+      }
+  },
+  "firmware" : {
+      "opensbi-src" : "../../firmware/opensbi"
+  }
+}
