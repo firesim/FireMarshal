@@ -21,12 +21,12 @@ ubuntu_dir = pathlib.Path(__file__).resolve().parent
 overlay = ubuntu_dir / 'overlay'
 
 
-# Fedora doesn't support any options
+# Ubuntu doesn't support any options
 def hashOpts(opts):
     return None
 
 
-# Fedora doesn't support any options
+# Ubuntu doesn't support any options
 def mergeOpts(base, new):
     return base
 
@@ -71,7 +71,7 @@ class Builder:
 
     def generateBootScriptOverlay(self, script, args):
         # How this works:
-        # The fedora repo has a pre-built overlay with all the systemd paths
+        # The ubuntu repo has a pre-built overlay with all the systemd paths
         # filled in and a custom boot target (firesim.target) that loads a
         # custom service (firesim.service) that runs a script (/init.sh). We
         # can change the default boot behavior by changing this script.
