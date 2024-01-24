@@ -1,0 +1,6 @@
+{
+  "name" : "example-br",
+  "base" : "bare-base.json",
+  "host-init" : "host-init.sh",
+  "bin" : "overlay/root/hello-world/hello-world.riscv"
+}

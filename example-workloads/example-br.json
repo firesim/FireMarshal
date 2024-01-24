@@ -1,0 +1,13 @@
+{
+  "name" : "example-br",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
+  "jobs" : [
+    {
+      "name" : "hello-world",
+      "outputs" : [ "/root/hello-world/target.out" ],
+      "run" : "run.sh"
+    }
+  ]
+}
