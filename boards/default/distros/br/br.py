@@ -207,14 +207,14 @@ class Builder:
         cached_local = f"{br_dir}/{self.outputImg.name}.zip"
 
         # try N times then move on
-        for i in range(3):
-            try:
-                log.info(f"Attempting to download cached image: {cached_url}")
-                urllib.request.urlretrieve(cached_url, cached_local)
-                break
-            except Exception as e:
-                log.debug(f"urlretrieve exception: {e}")
-            time.sleep(3)
+# for i in range(3):
+# try:
+# log.info(f"Attempting to download cached image: {cached_url}")
+# urllib.request.urlretrieve(cached_url, cached_local)
+# break
+# except Exception as e:
+# log.debug(f"urlretrieve exception: {e}")
+# time.sleep(3)
 
         if os.path.exists(cached_local):
             assert len(task.targets) == 1, "Multiple targets detected for buildroot"
