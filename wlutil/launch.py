@@ -126,7 +126,7 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
             if config['launch']:
                 runResDir = baseResDir / config['name']
                 uartLog = runResDir / "uartlog"
-                uartlogs.append(uartlog)
+                uartlogs.append(uartLog)
                 os.makedirs(runResDir)
 
                 if spike:
