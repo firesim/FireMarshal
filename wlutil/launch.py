@@ -119,12 +119,14 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
     baseResDir = wlutil.getOpt('res-dir') / wlutil.getOpt('run-name')
 
     screenIdentifiers = {}
+    uartlogs = []
 
     try:
         for config in configs:
             if config['launch']:
                 runResDir = baseResDir / config['name']
                 uartLog = runResDir / "uartlog"
+                uartlogs.append(uartLog)
                 os.makedirs(runResDir)
 
                 if spike:
@@ -155,6 +157,15 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
 
         for proc in jobProcs:
             proc.wait()
+
+        for uartlog in uartlogs:
+            try:
+                with open(uartlog, 'r') as f:
+                    last_line = f.readlines()[-1]
+                    if 'COMMAND_EXIT_CODE="0"' not in last_line:
+                        raise RuntimeError("One (or more) job(s) returned a non-zero error code. Please check output.")
+            except FileNotFoundError:
+                raise RuntimeError(f"Unable to check output of job with {uartlog} uartlog.")
 
     except Exception:
         cleanUpSubProcesses()
