@@ -162,7 +162,7 @@ def launchWorkload(baseConfig, jobs=None, spike=False, silent=False):
             try:
                 with open(uartlog, 'r') as f:
                     last_line = f.readlines()[-1]
-                    if not 'COMMAND_EXIT_CODE="0"' in last_line:
+                    if 'COMMAND_EXIT_CODE="0"' not in last_line:
                         raise RuntimeError("One (or more) job(s) returned a non-zero error code. Please check output.")
             except FileNotFoundError:
                 raise RuntimeError(f"Unable to check output of job with {uartlog} uartlog.")
