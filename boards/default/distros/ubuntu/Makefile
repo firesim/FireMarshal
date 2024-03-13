@@ -1,4 +1,4 @@
-RAWURL=https://cdimage.ubuntu.com/releases/22.04.2/release/ubuntu-22.04.3-preinstalled-server-riscv64+unmatched.img.xz
+RAWURL=https://cdimage.ubuntu.com/releases/22.04.4/release/ubuntu-22.04.4-preinstalled-server-riscv64+unmatched.img.xz
 COMPIMG=rootfs.img.xz
 NEWIMG=rootfs.img
 
