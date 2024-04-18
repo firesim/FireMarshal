@@ -32,11 +32,17 @@ def get_free_tcp_port():
 # Returns a command string to launch the given config in spike. Must be called with shell=True.
 def getSpikeCmd(config, nodisk=False):
     log = logging.getLogger()
-
+    spikeArgs = ''
     if 'img' in config and config['img-hardcoded']:
         log.warn("You have hard-coded a disk image in your workload. Spike does not support disk images, your workload may not work correctly. Consider building with the '--nodisk' option (for linux-based workloads).")
     elif 'img' in config and not nodisk:
-        raise ValueError("Spike does not support disk-based configurations")
+        riscv_lib_path = os.getenv('RISCV')
+        if not os.path.isfile(riscv_lib_path+'/lib/libspikedevices.so'): 
+            raise ValueError("Spike does not support disk-based configurations without libspikedevices.so")
+        
+        spikeArgs += '--extlib=libspikedevices.so ' +\
+                     "--device=\"iceblk," +\
+                     'img=' + str(config.get('img', '')) + "\" "
 
     if 'spike' in config:
         spikeBin = str(config['spike'])
@@ -44,10 +50,9 @@ def getSpikeCmd(config, nodisk=False):
         spikeBin = 'spike'
 
     cmd = [spikeBin,
-           config.get('spike-args', ''),
+           spikeArgs, #config.get('spike-args', ''),
            ' -p' + str(config['cpus']),
            ' -m' + str(int(config['mem'] / (1024*1024)))]
-
     if nodisk:
         cmd.append(str(wlutil.noDiskPath(config['bin'])))
     else:
