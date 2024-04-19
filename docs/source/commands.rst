@@ -94,8 +94,8 @@ workload.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In some cases, you may need to boot your workload in spike (typically due to a
 custom ISA extension or hardware model). In that case, you may use the -s
-option. Note that spike currently does not support network or block devices.
-You must pass the --no-disk option to FireMarshal when using spike.
+option. Note that spike currently does not support network.
+You may need to pass the --no-disk option to FireMarshal when using spike.
 
 clean
 --------------------------------------
@@ -115,8 +115,7 @@ included in the output directory.
 
 ``-s --spike``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Test using spike instead of qemu (requires the --no-disk option to the
-``marshal`` command).
+Test using spike instead of qemu.
 
 ``-m testDir --manual testDir``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

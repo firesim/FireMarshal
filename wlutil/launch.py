@@ -37,12 +37,14 @@ def getSpikeCmd(config, nodisk=False):
         log.warn("You have hard-coded a disk image in your workload. Spike does not support disk images, your workload may not work correctly. Consider building with the '--nodisk' option (for linux-based workloads).")
     elif 'img' in config and not nodisk:
         riscv_lib_path = os.getenv('RISCV')
-        if not os.path.isfile(riscv_lib_path+'/lib/libspikedevices.so'):
-            raise ValueError("Spike does not support disk-based configurations without libspikedevices.so")
-
-        spikeArgs += '--extlib=libspikedevices.so ' +\
-                     "--device=\"iceblk," +\
-                     'img=' + str(config.get('img', '')) + "\" "
+        if riscv_lib_path is None:
+            raise ValueError("The RISCV environment variable is not set")
+        elif not os.path.isfile(riscv_lib_path+'/lib/libspikedevices.so'):
+            raise ValueError("Spike does not support disk-based configurations without libspikedevices.so installed by Chipyard")
+        else:
+            spikeArgs += '--extlib=libspikedevices.so ' +\
+                         "--device=\"iceblk," +\
+                         'img=' + str(config.get('img', '')) + "\" "
 
     if 'spike' in config:
         spikeBin = str(config['spike'])
@@ -50,7 +52,8 @@ def getSpikeCmd(config, nodisk=False):
         spikeBin = 'spike'
 
     cmd = [spikeBin,
-           spikeArgs,  # config.get('spike-args', ''),
+           spikeArgs,
+           config.get('spike-args', ''),
            ' -p' + str(config['cpus']),
            ' -m' + str(int(config['mem'] / (1024*1024)))]
     if nodisk:
