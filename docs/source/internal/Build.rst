@@ -5,8 +5,8 @@ Build Process
 The goal of building a workload is to produce a working boot binary and
 (optionally) a root filesystem to boot from. The same outputs are used for
 Spike, Qemu, and FireSim. Spike now supports a disk. In order to use a disk,
-libspikedevices.so should be installed by chipyard to the RISCV library path.
-Iceblk will be used as the default device. Users may also choose to create 
+``libspikedevices.so`` should be installed by Chipyard to the ``RISCV`` library path (i.e. ``$RISCV/lib`).
+The Iceblk block device model will be used as the default block device model. Users may also choose to create 
 an initramfs-only version of their workload instead for Spike
 (that binary will boot on Qemu and FireSim as well).
 The build process proceeds as follows:
