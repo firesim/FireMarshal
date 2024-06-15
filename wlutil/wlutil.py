@@ -569,45 +569,80 @@ def waitpid(pid):
         time.sleep(0.25)
 
 
-if sp.run(['/usr/bin/sudo', '-ln', 'true'], stderr=sp.DEVNULL, stdout=sp.DEVNULL).returncode == 0:
-    # User has passwordless sudo available, use the mount command (much faster)
-    sudoCmd = ["/usr/bin/sudo"]
+sudoCmd = ["/usr/bin/sudo"]
+pwdlessSudoCmd = [] # set if pwdless sudo is enabled
 
-    @contextmanager
-    def mountImg(imgPath, mntPath):
-        run(sudoCmd + ["mount", "-o", "loop", imgPath, mntPath])
+
+def runnableWithSudo(cmd):
+    global sudoCmd
+    return sp.run(sudoCmd + ['-ln', cmd], stderr=sp.DEVNULL, stdout=sp.DEVNULL).returncode == 0
+
+
+if runnableWithSudo('true'):
+    # User has passwordless sudo available
+    pwdlessSudoCmd = sudoCmd
+
+
+def existsAndRunnableWithSudo(cmd):
+    global sudoCmd
+    return os.path.exists(cmd) and runnableWithSudo(cmd)
+
+
+@contextmanager
+def mountImg(imgPath, mntPath):
+    global sudoCmd
+    global pwdlessSudoCmd
+    if pwdlessSudoCmd:
+        # use faster mount without firesim script since we have pwdless sudo
+        run(pwdlessSudoCmd + ["mount", "-o", "loop", imgPath, mntPath])
+        username = sp.run(['whoami'], capture_output=True, text=True)
+        run(pwdlessSudoCmd + ["chown", "-R", username, mntPath])
         try:
             yield mntPath
         finally:
-            run_with_retries(sudoCmd + ['umount', mntPath])
-else:
-    # User doesn't have sudo (use guestmount, slow but reliable)
-    sudoCmd = []
+            run_with_retries(pwdlessSudoCmd + ['umount', mntPath])
+    else:
+        # use either firesim-*mount* cmds if available/useable or default to guestmount (slower but reliable)
+        fsimMountCmd = '/usr/local/bin/firesim-mount'
+        fsimUnmountCmd = '/usr/local/bin/firesim-unmount'
 
-    @contextmanager
-    def mountImg(imgPath, mntPath):
-        run(['guestmount', '--pid-file', 'guestmount.pid', '-a', imgPath, '-m', '/dev/sda', mntPath])
-        try:
-            with open('./guestmount.pid', 'r') as pidFile:
-                mntPid = int(pidFile.readline())
-            yield mntPath
-        finally:
-            run(['guestunmount', mntPath])
-            os.remove('./guestmount.pid')
+        if existsAndRunnableWithSudo(fsimMountCmd) and existsAndRunnableWithSudo(fsimUnmountCmd):
+            run(sudoCmd + [fsimMountCmd, imgPath, mntPath])
+            try:
+                yield mntPath
+            finally:
+                run_with_retries(sudoCmd + [fsimUnmountCmd, mntPath])
+        else:
+            run(['guestmount', '--pid-file', 'guestmount.pid', '-a', imgPath, '-m', '/dev/sda', mntPath])
+            try:
+                with open('./guestmount.pid', 'r') as pidFile:
+                    mntPid = int(pidFile.readline())
+                yield mntPath
+            finally:
+                run(['guestunmount', mntPath])
+                os.remove('./guestmount.pid')
 
-        # There is a race-condition in guestmount where a background task keeps
-        # modifying the image for a period after unmount. This is the documented
-        # best-practice (see man guestmount).
-        waitpid(mntPid)
+            # There is a race-condition in guestmount where a background task keeps
+            # modifying the image for a period after unmount. This is the documented
+            # best-practice (see man guestmount).
+            waitpid(mntPid)
 
 
 def toCpio(src, dst):
+    global sudoCmd
+    global pwdlessSudoCmd
+
     log = logging.getLogger()
     log.debug("Creating Cpio archive from " + str(src))
-    with open(dst, 'wb') as outCpio:
-        p = sp.run(sudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
-                   stderr=sp.PIPE, stdout=outCpio, cwd=src)
-        log.debug(p.stderr.decode('utf-8'))
+
+    fsimCpioCmd = '/usr/local/bin/firesim-cpio'
+    if existsAndRunnableWithSudo(fsimCpioCmd):
+        run(sudoCmd + [fsimCpioCmd, src, dst])
+    else:
+        with open(dst, 'wb') as outCpio:
+            p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
+                       stderr=sp.PIPE, stdout=outCpio, cwd=src)
+            log.debug(p.stderr.decode('utf-8'))
 
 
 def resizeFS(img, newSize=0):
@@ -649,14 +684,18 @@ def copyImgFiles(img, files, direction):
     files - list of FileSpecs to use
     direction - "in" or "out" for copying files into or out of the image (respectively)
     """
+    # TODO: unsure if you need sudo anymore for this if chown is happening correctly above
+    global pwdlessSudoCmd
+
     with mountImg(img, getOpt('mnt-dir')):
+
         for f in files:
             if direction == 'in':
                 dst = str(getOpt('mnt-dir') / f.dst.relative_to('/'))
-                run(sudoCmd + ['cp', '-a', str(f.src), dst])
+                run(pwdlessSudoCmd + ['cp', '-a', str(f.src), dst])
             elif direction == 'out':
                 src = str(getOpt('mnt-dir') / f.src.relative_to('/'))
-                run(sudoCmd + ['cp', '-a', src, str(f.dst)])
+                run(pwdlessSudoCmd + ['cp', '-a', src, str(f.dst)])
             else:
                 raise ValueError("direction option must be either 'in' or 'out'")
 
