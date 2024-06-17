@@ -643,14 +643,10 @@ def toCpio(src, dst):
     if existsAndRunnableWithSudo(fsimCpioCmd):
         run(sudoCmd + [fsimCpioCmd, src, dst])
     else:
-        if pwdlessSudoCmd:
-            with open(dst, 'wb') as outCpio:
-                p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
-                           stderr=sp.PIPE, stdout=outCpio, cwd=src)
-                log.debug(p.stderr.decode('utf-8'))
-        else:
-            # if the firesim script doesn't exist then users need 'sudo' access
-            raise ValueError("Need passwordless 'sudo' access for cpio script")
+        with open(dst, 'wb') as outCpio:
+            p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
+                       stderr=sp.PIPE, stdout=outCpio, cwd=src)
+            log.debug(p.stderr.decode('utf-8'))
 
 
 def resizeFS(img, newSize=0):
