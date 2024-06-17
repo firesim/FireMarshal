@@ -9,7 +9,7 @@ platforms:
 
 dependencies:
     - qemu # from ucb-bar channel - https://github.com/ucb-bar/qemu-feedstock
-    - python>=3.8
+    - python>=3.9,<3.11
     - rsync
     - psutil
     - doit>=0.34.0
@@ -27,8 +27,8 @@ dependencies:
     - sphinx
     - sphinx_rtd_theme
     - unzip
-    - gcc<13
-    - gxx<13
+    - gcc=13.2
+    - gxx=13.2
     - conda-gcc-specs
     - binutils
     - sysroot_linux-64=2.17

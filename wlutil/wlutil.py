@@ -570,7 +570,7 @@ def waitpid(pid):
 
 
 sudoCmd = ["/usr/bin/sudo"]
-pwdlessSudoCmd = [] # set if pwdless sudo is enabled
+pwdlessSudoCmd = []  # set if pwdless sudo is enabled
 
 
 def runnableWithSudo(cmd):
