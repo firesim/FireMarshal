@@ -86,9 +86,9 @@ jobs:
           cd ${{ env.REMOTE_WORK_DIR }}
           eval "$(conda shell.bash hook)"
           conda activate $PWD/.conda-env
-          conda env list
           git clone https://github.com/riscv-software-src/riscv-isa-sim.git
           cd riscv-isa-sim
+          git checkout 4d8651b
           mkdir build
           cd build
           ../configure --prefix=$RISCV --with-boost=no --with-boost-asio=no --with-boost-regex=no
