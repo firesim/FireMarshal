@@ -593,8 +593,8 @@ def mountImg(imgPath, mntPath):
     global sudoCmd
     global pwdlessSudoCmd
 
-    uid = sp.run(['id -u'], capture_output=True, text=True)
-    gid = sp.run(['id -g'], capture_output=True, text=True)
+    uid = sp.run(['id', '-u'], capture_output=True, text=True).stdout.strip()
+    gid = sp.run(['id', '-g'], capture_output=True, text=True).stdout.strip()
 
     if pwdlessSudoCmd:
         # use faster mount without firesim script since we have pwdless sudo
