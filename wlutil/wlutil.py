@@ -592,35 +592,39 @@ def existsAndRunnableWithSudo(cmd):
 def mountImg(imgPath, mntPath):
     global sudoCmd
     global pwdlessSudoCmd
+
+    uid = sp.run(['id -u'], capture_output=True, text=True)
+    gid = sp.run(['id -g'], capture_output=True, text=True)
+
     if pwdlessSudoCmd:
         # use faster mount without firesim script since we have pwdless sudo
         run(pwdlessSudoCmd + ["mount", "-o", "loop", imgPath, mntPath])
-        username = sp.run(['whoami'], capture_output=True, text=True)
-        run(pwdlessSudoCmd + ["chown", "-R", username, mntPath])
+        run(pwdlessSudoCmd + ["chown", "-R", f"{uid}:{gid}", mntPath])
         try:
             yield mntPath
         finally:
             run_with_retries(pwdlessSudoCmd + ['umount', mntPath])
     else:
         # use either firesim-*mount* cmds if available/useable or default to guestmount (slower but reliable)
-        fsimMountCmd = '/usr/local/bin/firesim-mount'
+        fsimMountCmd = '/usr/local/bin/firesim-mount-with-uid-gid'
         fsimUnmountCmd = '/usr/local/bin/firesim-unmount'
 
         if existsAndRunnableWithSudo(fsimMountCmd) and existsAndRunnableWithSudo(fsimUnmountCmd):
-            run(sudoCmd + [fsimMountCmd, imgPath, mntPath])
+            run(sudoCmd + [fsimMountCmd, imgPath, mntPath, uid, gid])
             try:
                 yield mntPath
             finally:
                 run_with_retries(sudoCmd + [fsimUnmountCmd, mntPath])
         else:
-            run(['guestmount', '--pid-file', 'guestmount.pid', '-a', imgPath, '-m', '/dev/sda', mntPath])
+            pidPath = './guestmount.pid'
+            run(['guestmount', '--pid-file', pidPath, '-o', f'uid={uid}', '-o', f'gid={gid}', '-a', imgPath, '-m', '/dev/sda', mntPath])
             try:
-                with open('./guestmount.pid', 'r') as pidFile:
+                with open(pidPath, 'r') as pidFile:
                     mntPid = int(pidFile.readline())
                 yield mntPath
             finally:
                 run(['guestunmount', mntPath])
-                os.remove('./guestmount.pid')
+                os.remove(pidPath)
 
             # There is a race-condition in guestmount where a background task keeps
             # modifying the image for a period after unmount. This is the documented
@@ -639,10 +643,14 @@ def toCpio(src, dst):
     if existsAndRunnableWithSudo(fsimCpioCmd):
         run(sudoCmd + [fsimCpioCmd, src, dst])
     else:
-        with open(dst, 'wb') as outCpio:
-            p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
-                       stderr=sp.PIPE, stdout=outCpio, cwd=src)
-            log.debug(p.stderr.decode('utf-8'))
+        if pwdlessSudoCmd:
+            with open(dst, 'wb') as outCpio:
+                p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
+                           stderr=sp.PIPE, stdout=outCpio, cwd=src)
+                log.debug(p.stderr.decode('utf-8'))
+        else:
+            # if the firesim script doesn't exist then users need 'sudo' access
+            raise ValueError("Need passwordless 'sudo' access for cpio script")
 
 
 def resizeFS(img, newSize=0):
@@ -684,18 +692,14 @@ def copyImgFiles(img, files, direction):
     files - list of FileSpecs to use
     direction - "in" or "out" for copying files into or out of the image (respectively)
     """
-    # TODO: unsure if you need sudo anymore for this if chown is happening correctly above
-    global pwdlessSudoCmd
-
     with mountImg(img, getOpt('mnt-dir')):
-
         for f in files:
             if direction == 'in':
                 dst = str(getOpt('mnt-dir') / f.dst.relative_to('/'))
-                run(pwdlessSudoCmd + ['cp', '-a', str(f.src), dst])
+                run(['cp', '-a', str(f.src), dst])
             elif direction == 'out':
                 src = str(getOpt('mnt-dir') / f.src.relative_to('/'))
-                run(pwdlessSudoCmd + ['cp', '-a', src, str(f.dst)])
+                run(['cp', '-a', src, str(f.dst)])
             else:
                 raise ValueError("direction option must be either 'in' or 'out'")
 
