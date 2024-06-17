@@ -692,10 +692,10 @@ def copyImgFiles(img, files, direction):
         for f in files:
             if direction == 'in':
                 dst = str(getOpt('mnt-dir') / f.dst.relative_to('/'))
-                run(['cp', '-a', str(f.src), dst])
+                run(['cp', '-a', '-f', str(f.src), dst])
             elif direction == 'out':
                 src = str(getOpt('mnt-dir') / f.src.relative_to('/'))
-                run(['cp', '-a', src, str(f.dst)])
+                run(['cp', '-a', '-f', src, str(f.dst)])
             else:
                 raise ValueError("direction option must be either 'in' or 'out'")
 
