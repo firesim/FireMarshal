@@ -593,6 +593,10 @@ def mountImg(imgPath, mntPath):
     global sudoCmd
     global pwdlessSudoCmd
 
+    assert imgPath.is_file(), f"Unable to find {imgPath} to mount"
+    ret = run(["mountpoint", mntPath], check=False).returncode
+    assert ret == 1, f"{mntPath} already mounted. Somethings wrong"
+
     uid = sp.run(['id', '-u'], capture_output=True, text=True).stdout.strip()
     gid = sp.run(['id', '-g'], capture_output=True, text=True).stdout.strip()
 
@@ -688,16 +692,50 @@ def copyImgFiles(img, files, direction):
     files - list of FileSpecs to use
     direction - "in" or "out" for copying files into or out of the image (respectively)
     """
+    log = logging.getLogger()
+    assert direction in ['in', 'out'], f"direction={direction} must be either 'in' or 'out'"
     with mountImg(img, getOpt('mnt-dir')):
         for f in files:
-            if direction == 'in':
-                dst = str(getOpt('mnt-dir') / f.dst.relative_to('/'))
-                run(['cp', '-a', '-f', str(f.src), dst])
-            elif direction == 'out':
-                src = str(getOpt('mnt-dir') / f.src.relative_to('/'))
-                run(['cp', '-a', '-f', src, str(f.dst)])
-            else:
-                raise ValueError("direction option must be either 'in' or 'out'")
+            cpSrcMaybeRelPath = f.src if direction == 'in' else f.src.relative_to('/')
+            cpDstMaybeRelPath = f.dst.relative_to('/') if direction == 'in' else f.dst
+            cpSrcResPath = cpSrcMaybeRelPath if direction == 'in' else getOpt('mnt-dir') / cpSrcMaybeRelPath
+            cpDstResPath = getOpt('mnt-dir') / cpDstMaybeRelPath if direction == 'in' else cpDstMaybeRelPath
+
+            # modify perms for dirs to always be able to copy in/out
+            oldPerms = {}  # store old permissions
+            relaxedPerms = 0o777  # arb. chosen to be very permissive
+            dirsToModify = []
+
+            # irrespective if the mountpoint is src/dst, modify all dirs up to mountpoint (including the src/dst dir)
+            withinMountRelPath = cpDstMaybeRelPath if direction == 'in' else cpSrcMaybeRelPath
+            withinMountPath = getOpt('mnt-dir') / withinMountRelPath
+            parents = withinMountRelPath.parents if withinMountRelPath.parents else '.'
+            dirsToModify.extend([getOpt('mnt-dir') / e for e in reversed(parents)])
+            dirsToModify.extend([withinMountPath] if withinMountPath.is_dir() else [])
+            # also ensure that if copying a directory into a mountpoint, that directory can be written in the mountpoint
+            dirsToModify.extend([cpDstResPath / cpSrcResPath.name] if direction == 'in' and cpSrcResPath.is_dir() else [])
+
+            # remove duplicates but keep order
+            dirsToModify = list(dict.fromkeys(dirsToModify))
+
+            for dirPath in dirsToModify:
+                perms = int(oct(os.stat(dirPath).st_mode)[-3:], 8)
+                log.debug(f"Changing permissions of {dirPath} from {oct(perms)}:{type(perms)} to {oct(relaxedPerms)} temporarily")
+                assert dirPath not in oldPerms, f"Something went wrong. Expected that {dirPath}'s permissions aren't already set"
+                oldPerms[dirPath] = perms
+                os.chmod(dirPath, relaxedPerms)
+                newPerms = int(oct(os.stat(dirPath).st_mode)[-3:], 8)
+                assert newPerms == relaxedPerms, f"Unable to set perms of {dirPath} to {oct(relaxedPerms)}"
+
+            try:
+                run(['cp', '-a', '-f', cpSrcResPath, cpDstResPath])
+            finally:
+                for dirPath in dirsToModify:
+                    perms = oldPerms[dirPath]
+                    log.debug(f"Changing permissions of {dirPath} back from {oct(relaxedPerms)} to {oct(perms)}:{type(perms)}")
+                    os.chmod(dirPath, perms)
+                    # verify it's right
+                    assert int(oct(os.stat(dirPath).st_mode)[-3:], 8) == perms, "Unable to revert permissions"
 
 
 def applyOverlay(img, overlay):
