@@ -8,4 +8,4 @@ platforms:
     - linux-64
 
 dependencies:
-    - riscv-tools==1.0.4 # from ucb-bar channel - https://github.com/ucb-bar/riscv-tools-feedstock
+    - riscv-tools==1.0.6 # from ucb-bar channel - https://github.com/ucb-bar/riscv-tools-feedstock

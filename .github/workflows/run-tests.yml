@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Cancel previous workflow runs
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@0.12.1
         with:
           access_token: ${{ github.token }}
 
@@ -38,8 +38,8 @@ jobs:
     outputs:
       run-core: ${{ steps.filter.outputs.all_count != steps.filter.outputs.non-core-files_count }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -71,7 +71,7 @@ jobs:
             rm -rf ${{ github.workspace }}/* || true
             rm -rf ${{ github.workspace }}/.* || true
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup repo copy
         run: |
           git clone $GITHUB_WORKSPACE ${{ env.REMOTE_WORK_DIR }}
@@ -88,6 +88,7 @@ jobs:
           conda activate $PWD/.conda-env
           git clone https://github.com/riscv-software-src/riscv-isa-sim.git
           cd riscv-isa-sim
+          git checkout 4d8651b
           mkdir build
           cd build
           ../configure --prefix=$RISCV --with-boost=no --with-boost-asio=no --with-boost-regex=no

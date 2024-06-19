@@ -569,45 +569,88 @@ def waitpid(pid):
         time.sleep(0.25)
 
 
-if sp.run(['/usr/bin/sudo', '-ln', 'true'], stderr=sp.DEVNULL, stdout=sp.DEVNULL).returncode == 0:
-    # User has passwordless sudo available, use the mount command (much faster)
-    sudoCmd = ["/usr/bin/sudo"]
+sudoCmd = ["/usr/bin/sudo"]
+pwdlessSudoCmd = []  # set if pwdless sudo is enabled
 
-    @contextmanager
-    def mountImg(imgPath, mntPath):
-        run(sudoCmd + ["mount", "-o", "loop", imgPath, mntPath])
+
+def runnableWithSudo(cmd):
+    global sudoCmd
+    return sp.run(sudoCmd + ['-ln', cmd], stderr=sp.DEVNULL, stdout=sp.DEVNULL).returncode == 0
+
+
+if runnableWithSudo('true'):
+    # User has passwordless sudo available
+    pwdlessSudoCmd = sudoCmd
+
+
+def existsAndRunnableWithSudo(cmd):
+    global sudoCmd
+    return os.path.exists(cmd) and runnableWithSudo(cmd)
+
+
+@contextmanager
+def mountImg(imgPath, mntPath):
+    global sudoCmd
+    global pwdlessSudoCmd
+
+    assert imgPath.is_file(), f"Unable to find {imgPath} to mount"
+    ret = run(["mountpoint", mntPath], check=False).returncode
+    assert ret == 1, f"{mntPath} already mounted. Somethings wrong"
+
+    uid = sp.run(['id', '-u'], capture_output=True, text=True).stdout.strip()
+    gid = sp.run(['id', '-g'], capture_output=True, text=True).stdout.strip()
+
+    if pwdlessSudoCmd:
+        # use faster mount without firesim script since we have pwdless sudo
+        run(pwdlessSudoCmd + ["mount", "-o", "loop", imgPath, mntPath])
+        run(pwdlessSudoCmd + ["chown", "-R", f"{uid}:{gid}", mntPath])
         try:
             yield mntPath
         finally:
-            run_with_retries(sudoCmd + ['umount', mntPath])
-else:
-    # User doesn't have sudo (use guestmount, slow but reliable)
-    sudoCmd = []
+            run_with_retries(pwdlessSudoCmd + ['umount', mntPath])
+    else:
+        # use either firesim-*mount* cmds if available/useable or default to guestmount (slower but reliable)
+        fsimMountCmd = '/usr/local/bin/firesim-mount-with-uid-gid'
+        fsimUnmountCmd = '/usr/local/bin/firesim-unmount'
 
-    @contextmanager
-    def mountImg(imgPath, mntPath):
-        run(['guestmount', '--pid-file', 'guestmount.pid', '-a', imgPath, '-m', '/dev/sda', mntPath])
-        try:
-            with open('./guestmount.pid', 'r') as pidFile:
-                mntPid = int(pidFile.readline())
-            yield mntPath
-        finally:
-            run(['guestunmount', mntPath])
-            os.remove('./guestmount.pid')
+        if existsAndRunnableWithSudo(fsimMountCmd) and existsAndRunnableWithSudo(fsimUnmountCmd):
+            run(sudoCmd + [fsimMountCmd, imgPath, mntPath, uid, gid])
+            try:
+                yield mntPath
+            finally:
+                run_with_retries(sudoCmd + [fsimUnmountCmd, mntPath])
+        else:
+            pidPath = './guestmount.pid'
+            run(['guestmount', '--pid-file', pidPath, '-o', f'uid={uid}', '-o', f'gid={gid}', '-a', imgPath, '-m', '/dev/sda', mntPath])
+            try:
+                with open(pidPath, 'r') as pidFile:
+                    mntPid = int(pidFile.readline())
+                yield mntPath
+            finally:
+                run(['guestunmount', mntPath])
+                os.remove(pidPath)
 
-        # There is a race-condition in guestmount where a background task keeps
-        # modifying the image for a period after unmount. This is the documented
-        # best-practice (see man guestmount).
-        waitpid(mntPid)
+            # There is a race-condition in guestmount where a background task keeps
+            # modifying the image for a period after unmount. This is the documented
+            # best-practice (see man guestmount).
+            waitpid(mntPid)
 
 
 def toCpio(src, dst):
+    global sudoCmd
+    global pwdlessSudoCmd
+
     log = logging.getLogger()
     log.debug("Creating Cpio archive from " + str(src))
-    with open(dst, 'wb') as outCpio:
-        p = sp.run(sudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
-                   stderr=sp.PIPE, stdout=outCpio, cwd=src)
-        log.debug(p.stderr.decode('utf-8'))
+
+    fsimCpioCmd = '/usr/local/bin/firesim-cpio'
+    if existsAndRunnableWithSudo(fsimCpioCmd):
+        run(sudoCmd + [fsimCpioCmd, src, dst])
+    else:
+        with open(dst, 'wb') as outCpio:
+            p = sp.run(pwdlessSudoCmd + ["sh", "-c", "find -print0 | cpio --owner root:root --null -ov --format=newc"],
+                       stderr=sp.PIPE, stdout=outCpio, cwd=src)
+            log.debug(p.stderr.decode('utf-8'))
 
 
 def resizeFS(img, newSize=0):
@@ -649,16 +692,50 @@ def copyImgFiles(img, files, direction):
     files - list of FileSpecs to use
     direction - "in" or "out" for copying files into or out of the image (respectively)
     """
+    log = logging.getLogger()
+    assert direction in ['in', 'out'], f"direction={direction} must be either 'in' or 'out'"
     with mountImg(img, getOpt('mnt-dir')):
         for f in files:
-            if direction == 'in':
-                dst = str(getOpt('mnt-dir') / f.dst.relative_to('/'))
-                run(sudoCmd + ['cp', '-a', str(f.src), dst])
-            elif direction == 'out':
-                src = str(getOpt('mnt-dir') / f.src.relative_to('/'))
-                run(sudoCmd + ['cp', '-a', src, str(f.dst)])
-            else:
-                raise ValueError("direction option must be either 'in' or 'out'")
+            cpSrcMaybeRelPath = f.src if direction == 'in' else f.src.relative_to('/')
+            cpDstMaybeRelPath = f.dst.relative_to('/') if direction == 'in' else f.dst
+            cpSrcResPath = cpSrcMaybeRelPath if direction == 'in' else getOpt('mnt-dir') / cpSrcMaybeRelPath
+            cpDstResPath = getOpt('mnt-dir') / cpDstMaybeRelPath if direction == 'in' else cpDstMaybeRelPath
+
+            # modify perms for dirs to always be able to copy in/out
+            oldPerms = {}  # store old permissions
+            relaxedPerms = 0o777  # arb. chosen to be very permissive
+            dirsToModify = []
+
+            # irrespective if the mountpoint is src/dst, modify all dirs up to mountpoint (including the src/dst dir)
+            withinMountRelPath = cpDstMaybeRelPath if direction == 'in' else cpSrcMaybeRelPath
+            withinMountPath = getOpt('mnt-dir') / withinMountRelPath
+            parents = withinMountRelPath.parents if withinMountRelPath.parents else '.'
+            dirsToModify.extend([getOpt('mnt-dir') / e for e in reversed(parents)])
+            dirsToModify.extend([withinMountPath] if withinMountPath.is_dir() else [])
+            # also ensure that if copying a directory into a mountpoint, that directory can be written in the mountpoint
+            dirsToModify.extend([cpDstResPath / cpSrcResPath.name] if direction == 'in' and cpSrcResPath.is_dir() else [])
+
+            # remove duplicates but keep order
+            dirsToModify = list(dict.fromkeys(dirsToModify))
+
+            for dirPath in dirsToModify:
+                perms = int(oct(os.stat(dirPath).st_mode)[-3:], 8)
+                log.debug(f"Changing permissions of {dirPath} from {oct(perms)}:{type(perms)} to {oct(relaxedPerms)} temporarily")
+                assert dirPath not in oldPerms, f"Something went wrong. Expected that {dirPath}'s permissions aren't already set"
+                oldPerms[dirPath] = perms
+                os.chmod(dirPath, relaxedPerms)
+                newPerms = int(oct(os.stat(dirPath).st_mode)[-3:], 8)
+                assert newPerms == relaxedPerms, f"Unable to set perms of {dirPath} to {oct(relaxedPerms)}"
+
+            try:
+                run(['cp', '-a', '-f', cpSrcResPath, cpDstResPath])
+            finally:
+                for dirPath in dirsToModify:
+                    perms = oldPerms[dirPath]
+                    log.debug(f"Changing permissions of {dirPath} back from {oct(relaxedPerms)} to {oct(perms)}:{type(perms)}")
+                    os.chmod(dirPath, perms)
+                    # verify it's right
+                    assert int(oct(os.stat(dirPath).st_mode)[-3:], 8) == perms, "Unable to revert permissions"
 
 
 def applyOverlay(img, overlay):

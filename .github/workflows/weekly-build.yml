@@ -25,7 +25,7 @@ jobs:
             rm -rf ${{ env.REMOTE_WORK_DIR }}/.* || true
             rm -rf ${{ github.workspace }}/* || true
             rm -rf ${{ github.workspace }}/.* || true
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup repo copy
         run: |
           git clone $GITHUB_WORKSPACE ${{ env.REMOTE_WORK_DIR }}
