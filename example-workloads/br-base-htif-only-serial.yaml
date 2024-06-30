@@ -1,0 +1,5 @@
+{
+  "name" : "br-base-htif-only-serial",
+  "base" : "br-base.json",
+  "linux-config" : "htif-only-serial-kfrag",
+}
