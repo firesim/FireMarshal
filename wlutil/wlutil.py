@@ -122,31 +122,33 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
     relative to baseDir."""
 
     # These options represent pathlib paths
+    # (path, needsStrict)
     pathOpts = [
-        'board-dir',
-        'image-dir',
-        'linux-dir',
-        'firesim-dir',
-        'opensbi-dir',
-        'log-dir',
-        'res-dir',
-        'workload-dirs'
+        ('board-dir', True),
+        ('image-dir', True),
+        ('linux-dir', True),
+        ('firesim-dir', True),
+        ('opensbi-dir', True),
+        ('log-dir', True),
+        ('res-dir', True),
+        ('mount-dir', False), # mount-dir will be created by marshal, so this path may not exist
+        ('workload-dirs', True)
     ]
 
-    def clean(path):
-        return (baseDir / pathlib.Path(path)).resolve(strict=True)
+    def clean(path, needsStrict):
+        return (baseDir / pathlib.Path(path)).resolve(strict=needsStrict)
 
-    for opt in pathOpts:
+    for (opt, needsStrict) in pathOpts:
         if opt in opts and opts[opt] is not None:
             try:
                 if isinstance(opts[opt], str):
                     # Scalar path
-                    opts[opt] = clean(opts[opt])
+                    opts[opt] = clean(opts[opt], needsStrict)
                 else:
                     # List of paths
                     cleanedPaths = []
                     for p in opts[opt]:
-                        cleanedPaths.append(clean(p))
+                        cleanedPaths.append(clean(p, needsStrict))
                     opts[opt] = cleanedPaths
             except Exception as e:
                 raise ConfigurationOptionError(opt, "Invalid path: " + str(e))
@@ -161,6 +163,7 @@ userOpts = [
         'image-dir',
         'firesim-dir',
         'log-dir',
+        'mount-dir',
         'res-dir',
         'jlevel',  # int or str from user, converted to '-jN' after loading
         'rootfs-margin',  # int or str from user, converted to int bytes after loading
@@ -187,9 +190,6 @@ derivedOpts = [
 
         # Storage for generated/temporary outputs
         'gen-dir',
-
-        # Empty directory used for mounting images
-        'mnt-dir',
 
         # Path to basic template for user-specified commands (the "command:" option)
         'command-script',
@@ -328,7 +328,6 @@ class marshalCtx(collections.abc.MutableMapping):
         self['busybox-dir'] = self['wlutil-dir'] / 'busybox'
         self['initramfs-dir'] = self['wlutil-dir'] / "initramfs"
         self['gen-dir'] = self['wlutil-dir'] / "generated"
-        self['mnt-dir'] = self['root-dir'] / "disk-mount"
         self['command-script'] = self['gen-dir'] / "_command.sh"
         self['run-name'] = ""
         self['rootfs-margin'] = humanfriendly.parse_size(str(self['rootfs-margin']))
@@ -411,7 +410,7 @@ def initialize():
     global ctx
     ctx = marshalCtx()
 
-    ctx['mnt-dir'].mkdir(parents=True, exist_ok=True)
+    ctx['mount-dir'].mkdir(parents=True, exist_ok=True)
 
     # Directories that must be initialized for disk-based initramfs
     initramfs_disk_dirs = ["bin", 'dev', 'etc', 'proc', 'root', 'sbin', 'sys', 'usr/bin', 'usr/sbin', 'mnt/root']
@@ -698,12 +697,12 @@ def copyImgFiles(img, files, direction):
     """
     log = logging.getLogger()
     assert direction in ['in', 'out'], f"direction={direction} must be either 'in' or 'out'"
-    with mountImg(img, getOpt('mnt-dir')):
+    with mountImg(img, getOpt('mount-dir')):
         for f in files:
             cpSrcMaybeRelPath = f.src if direction == 'in' else f.src.relative_to('/')
             cpDstMaybeRelPath = f.dst.relative_to('/') if direction == 'in' else f.dst
-            cpSrcResPath = cpSrcMaybeRelPath if direction == 'in' else getOpt('mnt-dir') / cpSrcMaybeRelPath
-            cpDstResPath = getOpt('mnt-dir') / cpDstMaybeRelPath if direction == 'in' else cpDstMaybeRelPath
+            cpSrcResPath = cpSrcMaybeRelPath if direction == 'in' else getOpt('mount-dir') / cpSrcMaybeRelPath
+            cpDstResPath = getOpt('mount-dir') / cpDstMaybeRelPath if direction == 'in' else cpDstMaybeRelPath
 
             # modify perms for dirs to always be able to copy in/out
             oldPerms = {}  # store old permissions
@@ -712,9 +711,9 @@ def copyImgFiles(img, files, direction):
 
             # irrespective if the mountpoint is src/dst, modify all dirs up to mountpoint (including the src/dst dir)
             withinMountRelPath = cpDstMaybeRelPath if direction == 'in' else cpSrcMaybeRelPath
-            withinMountPath = getOpt('mnt-dir') / withinMountRelPath
+            withinMountPath = getOpt('mount-dir') / withinMountRelPath
             parents = withinMountRelPath.parents if withinMountRelPath.parents else '.'
-            dirsToModify.extend([getOpt('mnt-dir') / e for e in reversed(parents)])
+            dirsToModify.extend([getOpt('mount-dir') / e for e in reversed(parents)])
             dirsToModify.extend([withinMountPath] if withinMountPath.is_dir() else [])
             # also ensure that if copying a directory into a mountpoint, that directory can be written in the mountpoint
             dirsToModify.extend([cpDstResPath / cpSrcResPath.name] if direction == 'in' and cpSrcResPath.is_dir() else [])

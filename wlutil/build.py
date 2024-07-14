@@ -552,8 +552,8 @@ def makeBin(config, nodisk=False):
         initramfsPath = ""
         if nodisk:
             initramfsIncludes += [wlutil.getOpt('initramfs-dir') / "nodisk"]
-            with wlutil.mountImg(config['img'], wlutil.getOpt('mnt-dir')):
-                initramfsIncludes = [wlutil.getOpt('mnt-dir')] + initramfsIncludes
+            with wlutil.mountImg(config['img'], wlutil.getOpt('mount-dir')):
+                initramfsIncludes = [wlutil.getOpt('mount-dir')] + initramfsIncludes
                 # This must be done while in the mountImg context
                 initramfsPath = makeInitramfs(initramfsIncludes, cpioDir, includeDevNodes=True)
         else:
