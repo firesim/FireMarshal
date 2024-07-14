@@ -620,6 +620,10 @@ def mountImg(imgPath, mntPath):
             finally:
                 run_with_retries(sudoCmd + [fsimUnmountCmd, mntPath])
         else:
+            # guestmount does not support NFS filesystems
+            fstype = sp.run(["df", mntPath, "--output=fstype"], capture_output=True, text=True).stdout.strip().splitlines()[-1]
+            assert "nfs" not in fstype, f"Guestmount does not support {fstype} filesystems, change mount-dir to a non-NFS filesystem"
+
             pidPath = './guestmount.pid'
             run(['guestmount', '--pid-file', pidPath, '-o', f'uid={uid}', '-o', f'gid={gid}', '-a', imgPath, '-m', '/dev/sda', mntPath])
             try:
