@@ -123,6 +123,7 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
 
     # These options represent pathlib paths
     # (path, needsStrict)
+    # mount-dir will be created by marshal, so this path may not exist
     pathOpts = [
         ('board-dir', True),
         ('image-dir', True),
@@ -131,7 +132,7 @@ def cleanPaths(opts, baseDir=pathlib.Path('.')):
         ('opensbi-dir', True),
         ('log-dir', True),
         ('res-dir', True),
-        ('mount-dir', False), # mount-dir will be created by marshal, so this path may not exist
+        ('mount-dir', False),
         ('workload-dirs', True)
     ]
 
