@@ -131,6 +131,7 @@ jobs:
     steps:
       - name: Run tests (- spike tests)
         run: |
+          env
           cd ${{ env.REMOTE_WORK_DIR }}
           eval "$(conda shell.bash hook)"
           conda activate $PWD/.conda-env
