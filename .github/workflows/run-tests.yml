@@ -132,6 +132,7 @@ jobs:
       - name: Run tests (- spike tests)
         run: |
           env
+          unset LD_LIBRARY_PATH
           cd ${{ env.REMOTE_WORK_DIR }}
           eval "$(conda shell.bash hook)"
           conda activate $PWD/.conda-env
