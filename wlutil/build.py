@@ -453,7 +453,8 @@ def makeModules(cfg):
                    ["modules_prepare", '-j' + str(wlutil.getOpt('jlevel'))],
                    cwd=linCfg['source'])
 
-        makeCmd = "make LINUXSRC=" + str(linCfg['source'])
+        # MODPOST errors are warnings, since we built the extmods without building the kernel first
+        makeCmd = "make KBUILD_MODPOST_WARN=1 LINUXSRC=" + str(linCfg['source'])
 
         for driverDir in linCfg['modules'].values():
             wlutil.checkSubmodule(driverDir)
