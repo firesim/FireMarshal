@@ -188,6 +188,22 @@ class Builder:
         mergeScript = br_dir / 'merge_config.sh'
         wlutil.run([mergeScript] + kFrags, cwd=(br_dir / 'buildroot'), env=env)
 
+        # Fakeroot needs to be set to 1.31 to compile with sysroot 2.17
+        fakerootVersion = 1.31
+        fakerootSite = "https://snapshot.debian.org/archive/debian/20240401T084438Z/pool/main/f/fakeroot"
+        fakerootTarFile = f"fakeroot_{fakerootVersion}.orig.tar.gz"
+        fakerootTar = br_dir / fakerootTarFile
+        fakerootDir = br_dir / f"fakeroot-{fakerootVersion}"
+
+        urllib.request.urlretrieve(fakerootSite + "/" + fakerootTarFile, fakerootTar)
+        wlutil.run(["tar", "-xzvf", str(fakerootTar)], cwd=br_dir, env=env)
+
+        # create a local.mk for buildroot
+        # Do this to override builtin buildroot package sourcecodes as needed
+        localMk = br_dir / 'buildroot' / 'local.mk'
+        with open(localMk, 'w') as f:
+            f.write(f"FAKEROOT_OVERRIDE_SRCDIR = {str(fakerootDir)}")
+
     # Build a base image in the requested format and return an absolute path to that image
     def buildBaseImage(self, task, changed):
         """Ensures that the image file specified by baseConfig() exists and is up to date.
