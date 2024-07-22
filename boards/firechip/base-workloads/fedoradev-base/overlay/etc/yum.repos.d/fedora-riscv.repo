@@ -1,0 +1,17 @@
+[fedora-riscv]
+name=Fedora RISC-V
+baseurl=http://fedora.riscv.rocks/repos-dist/rawhide/latest/riscv64/
+enabled=1
+gpgcheck=0
+
+[fedora-riscv-debuginfo]
+name=Fedora RISC-V - Debug
+baseurl=http://fedora.riscv.rocks/repos-dist/rawhide/latest/riscv64/debug/
+enabled=0
+gpgcheck=0
+
+[fedora-riscv-source]
+name=Fedora RISC-V - Source
+baseurl=http://fedora.riscv.rocks/repos-dist/rawhide/latest/riscv64/latest/src/
+enabled=0
+gpgcheck=0
