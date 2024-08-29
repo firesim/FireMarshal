@@ -8,3 +8,5 @@ boards/default/distros/ubuntu/rootfs.img*
 .ropeproject
 *~
 *#
+.conda-env
+.conda-lock-env

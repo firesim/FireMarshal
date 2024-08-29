@@ -22,14 +22,11 @@ To run FireMarshal independently, follow along from the next section (Standalone
 
 FireMarshal uses the [Conda](https://docs.conda.io/en/latest/) package manager to help manage system dependencies.
 This allows users to create an "environment" that holds system dependencies like ``make``, ``git``, etc.
-Additionally, FireMarshal uses [Conda Lock](https://conda.github.io/conda-lock/) to generate lock files for Conda environments.
-Please install Conda and Conda Lock using the Chipyard documentation [here](https://chipyard.readthedocs.io/en/main/Chipyard-Basics/Initial-Repo-Setup.html#default-requirements-installation).
 
 Next you can run the following commands to create a FireMarshal environment called ``firemarshal`` with a RISC-V compatible toolchain:
 
 ```bash
-conda-lock --conda $(which conda) -f ./conda-reqs.yaml -f ./riscv-tools.yaml -p linux-64
-conda-lock install --conda $(which conda) -n firemarshal
+./scripts/setup-conda.sh --conda-env-name firemarshal
 ```
 
 To enter this environment, you then run the ``activate`` command.

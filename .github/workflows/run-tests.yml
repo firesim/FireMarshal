@@ -79,8 +79,7 @@ jobs:
         run: |
           cd ${{ env.REMOTE_WORK_DIR }}
           eval "$(conda shell.bash hook)"
-          conda-lock --conda $(which conda) -f ./conda-reqs.yaml -f ./riscv-tools.yaml -p linux-64
-          conda-lock install --conda $(which conda) -p $PWD/.conda-env
+          ./scripts/setup-conda.sh
       - name: Install Spike
         run: |
           cd ${{ env.REMOTE_WORK_DIR }}
