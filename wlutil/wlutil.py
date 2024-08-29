@@ -595,7 +595,8 @@ def mountImg(imgPath, mntPath):
 
     assert imgPath.is_file(), f"Unable to find {imgPath} to mount"
     ret = run(["mountpoint", mntPath], check=False).returncode
-    assert ret == 1, f"{mntPath} already mounted. Somethings wrong"
+    # mountpoint on Ubuntu 20.* returns 1 (on 22.* it returns 32) for an empty folder
+    assert ret == 1 or ret == 32, f"{mntPath} already mounted. Somethings wrong"
 
     uid = sp.run(['id', '-u'], capture_output=True, text=True).stdout.strip()
     gid = sp.run(['id', '-g'], capture_output=True, text=True).stdout.strip()
