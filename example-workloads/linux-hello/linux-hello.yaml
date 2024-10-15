@@ -1,8 +1,9 @@
 {
   "name" : "linux-hello",
   "base" : "br-base.json",
-  "command" : "/root/hello.riscv",
+  "command" : "/root/run.sh",
   "overlay" : "overlay",
   "host-init": "build.sh",
+  "mem" : "1GiB",
   "workdir" : ".",
 }

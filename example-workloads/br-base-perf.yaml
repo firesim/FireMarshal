@@ -1,0 +1,13 @@
+{
+  "name" : "br-base-perf",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  # "guest-init" : "gi.sh",
+  # "linux-config" : "kfrag",
+  # "distro" : {
+  #     "name" : "br",
+  #     "opts" : {
+  #         "configs" : ["distroCfg"],
+  #     }
+  # },
+}

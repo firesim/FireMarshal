@@ -2,5 +2,7 @@
   "name": "br-perf",
   "base": "br-base.json",
   "overlay" : "overlay",
-  "guest-init" : "guest-init.sh"
+  "guest-init" : "guest-init.sh",
+  "linux-config" : "kfrag",
+  "command" : "/root/run.sh"
 }
