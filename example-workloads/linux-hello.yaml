@@ -4,5 +4,5 @@
   "command" : "/root/hello.riscv",
   "overlay" : "overlay",
   "host-init": "build.sh",
-  "workdir" : ".",
+  "linux-config" : "../br-base-htif-only-serial/htif-only-serial-kfrag",
 }
