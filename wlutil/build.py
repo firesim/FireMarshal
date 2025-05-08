@@ -514,8 +514,7 @@ def makeOpenSBI(config, nodisk=False):
     if 'opensbi-build-args' in config['firmware']:
         args += config['firmware']['opensbi-build-args']
 
-    wlutil.run(['make'] + wlutil.getOpt('linux-make-args') + args,
-               cwd=config['firmware']['source'])
+    wlutil.run(['make'] + args, cwd=config['firmware']['source'])
 
     return config['firmware']['source'] / 'build' / 'platform' / 'generic' / 'firmware' / 'fw_payload.elf'
 
