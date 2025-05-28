@@ -718,7 +718,9 @@ def copyImgFiles(img, files, direction):
             dirsToModify.extend([getOpt('mount-dir') / e for e in reversed(parents)])
             dirsToModify.extend([withinMountPath] if withinMountPath.is_dir() else [])
             # also ensure that if copying a directory into a mountpoint, that directory can be written in the mountpoint
-            dirsToModify.extend([cpDstResPath / cpSrcResPath.name] if direction == 'in' and cpSrcResPath.is_dir() else [])
+            dirsToModify.extend([cpDstResPath / cpSrcResPath.name] \ 
+                                if direction == 'in' and cpSrcResPath.is_dir() \ 
+                                and (cpDstResPath / cpSrcResPath.name).exists() else [])
 
             # remove duplicates but keep order
             dirsToModify = list(dict.fromkeys(dirsToModify))
