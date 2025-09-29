@@ -1,4 +1,4 @@
-RAWURL=https://dl.fedoraproject.org/pub/alt/risc-v/repo/virt-builder-images/images/Fedora-Minimal-Rawhide-20191123.n.1-sda.raw.xz
+RAWURL=https://dl.fedoraproject.org/pub/alt/risc-v/archive/repo/virt-builder-images/images/Fedora-Minimal-Rawhide-20191123.n.1-sda.raw.xz
 COMPIMG=rootfs.img.xz
 NEWIMG=rootfs.img
 
