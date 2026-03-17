@@ -6,6 +6,8 @@
 #include <inttypes.h>
 #include <fcntl.h>
 
+// #define TARGET_DMA
+
 static void drain_tacit_log(int fd) {
   int flags = fcntl(fd, F_GETFL);
   if (flags >= 0 && !(flags & O_NONBLOCK)) {
@@ -47,6 +49,20 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  #ifdef TARGET_DMA
+  if (tacit_target(fd, 1) < 0) {
+    fprintf(stderr, "failed to set trace target to dma\n");
+    return 1;
+  }
+  printf("trace target set to dma\n");
+  #else
+  if (tacit_target(fd, 2) < 0) {
+    fprintf(stderr, "failed to set trace target to fsim\n");
+    return 1;
+  }
+  printf("trace target set to fsim\n");
+  #endif
+
   if (tacit_enable(fd) < 0) {
       fprintf(stderr, "failed to enable tacit\n");
       return 1;
@@ -69,6 +85,12 @@ int main(int argc, char **argv) {
     return 1;
   }
   drain_tacit_log(fd);
+  uint64_t count;
+  if (tacit_stall_count(fd, &count) < 0) {
+    fprintf(stderr, "failed to get stall count\n");
+    return 1;
+  }
+  printf("stall count: %" PRIu64 "\n", count);
   if (tacit_close(fd) < 0) {
     fprintf(stderr, "failed to close /dev/tacit0\n");
     return 1;

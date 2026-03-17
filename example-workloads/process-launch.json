@@ -1,0 +1,18 @@
+{
+  "name" : "process-launch",
+  "base" : "br-base.json",
+  "iceblk-persistent-modification" : true,
+  "spike-args" : "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
+  "jobs" : [
+    {
+      "name" : "process-launch-collect",
+      "command" : "/root/process-launch/submit /root/process-launch/dummy 1000"
+    },
+    {
+      "name" : "process-launch",
+      "command" : "/root/process-launch/trace-submit /root/process-launch/dummy 64"
+    }
+  ]
+}
