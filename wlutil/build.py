@@ -576,19 +576,28 @@ def makeBin(config, nodisk=False, lspOnly=False):
         if 'dwarf' in config:
             config['dwarf'].parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(config['base-dwarf'], config['dwarf'])
-        # Copy driver dwarf files if they exist
+        # Copy driver dwarf files from the parent's out-dir. The parent may
+        # predate driver-dwarf emission; warn instead of failing so old base
+        # images keep working (rebuild the parent to get the dwarfs).
         if 'driver-dwarfs' in config:
-            for dwarf_path in config['driver-dwarfs'].values():
-                dwarf_path.parent.mkdir(parents=True, exist_ok=True)
-                # Note: Base configs may not have driver dwarfs, 
-                # so we only copy if they exist
-                # This handles the case where a parent config has 
-                # driver dwarfs to copy
+            log = logging.getLogger()
+            for driverName, dwarf_path in config['driver-dwarfs'].items():
+                base_dwarf = config['base-bin'].parent / (driverName + "-dwarf")
+                if base_dwarf.exists():
+                    dwarf_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(base_dwarf, dwarf_path)
+                else:
+                    log.warn("WARNING: parent image has no dwarf for driver '" +
+                             driverName + "' (" + str(base_dwarf) +
+                             "); rebuild the parent workload to generate it")
         return True
 
     # We assume that if you're not building linux, then the image is pre-built (e.g. during host-init)
     if 'linux' in config:
         initramfsIncludes = []
+
+        # makeModules copies driver dwarfs into out-dir; it must exist first
+        config['out-dir'].mkdir(parents=True, exist_ok=True)
 
         # Some submodules are only needed if building Linux
         try:
@@ -600,7 +609,6 @@ def makeBin(config, nodisk=False, lspOnly=False):
             return doit.exceptions.TaskFailed(err)
 
         initramfsIncludes.append(wlutil.getOpt('initramfs-dir') / 'drivers')
-        config['out-dir'].mkdir(parents=True, exist_ok=True)
         cpioDir = config['out-dir']
         cpioDir = pathlib.Path(cpioDir)
         initramfsPath = ""
