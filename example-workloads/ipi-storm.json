@@ -1,0 +1,14 @@
+{
+  "name" : "ipi-storm",
+  "base" : "br-base.json",
+  "iceblk-persistent-modification" : true,
+  "spike-args" : "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
+  "jobs" : [
+    {
+      "name" : "ipi-storm",
+      "command" : "/root/ipi-storm/trace-submit /root/ipi-storm/hello"
+    }
+  ]
+}

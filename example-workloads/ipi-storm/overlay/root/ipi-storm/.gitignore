@@ -1,0 +1,4 @@
+# Built by host-init.sh (make hello, make trace-submit); objdumps by `make dump`.
+hello
+trace-submit
+*.dump
