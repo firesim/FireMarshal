@@ -1,0 +1,22 @@
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -4533,6 +4533,19 @@
+ 	if (kthread_prio) {
+ 		sp.sched_priority = kthread_prio;
+ 		sched_setscheduler_nocheck(t, SCHED_FIFO, &sp);
++	} else {
++		struct sched_attr attr = { .sched_policy = SCHED_BATCH };
++
++		/*
++		 * SCHED_BATCH tasks never wakeup-preempt (see
++		 * check_preempt_wakeup_fair()).  Without this, the wake at the
++		 * end of a grace period can preempt ksoftirqd between
++		 * rcu_do_batch() invocations mid-drain, inserting two context
++		 * switches plus a grace-period cleanup/init between every
++		 * callback batch and roughly doubling the drain cost.  The GP
++		 * kthread instead runs right after the drain completes.
++		 */
++		sched_setattr_nocheck(t, &attr);
+ 	}
+ 	rnp = rcu_get_root();
+ 	raw_spin_lock_irqsave_rcu_node(rnp, flags);
