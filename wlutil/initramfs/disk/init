@@ -21,8 +21,19 @@ _setup() (
   mount -t sysfs none /sys
   mount -t devtmpfs none /dev
 
-  # Load all kernel modules
+  # Load modules in a pinned order: a module's base address depends on the
+  # spans of the modules loaded before it, so keep tacit (the only driver
+  # under active development) last -- rebuilding it then moves nothing.
+  for mod in icenet iceblk tacit ; do
+    modprobe "${mod}" 2>/dev/null || true
+  done
+  # Load any remaining kernel modules
   modprobe -a $(modprobe -l)
+
+  # Record module load addresses on the console for trace decoding
+  echo "::MODULES_BEGIN::"
+  cat /proc/modules
+  echo "::MODULES_END::"
 
   if ! _setup_rootfs ; then
     echo 'Failed to load an appropriate block device'
