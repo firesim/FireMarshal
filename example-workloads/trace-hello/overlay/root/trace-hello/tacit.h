@@ -26,8 +26,14 @@ struct tacit_log_record {
 #define TRACE_IOC_DISABLE    _IO(TRACE_IOC_MAGIC, 1)
 // Set the trace target
 #define TRACE_IOC_TARGET     _IOW(TRACE_IOC_MAGIC, 2, __u8)
-// Read trace encoder stall count
+// Read trace encoder stall count (cycles the packet queues were "full";
+// in lossy mode: cycles the core would have been stalled)
 #define TRACE_IOC_STALL_COUNT _IOR(TRACE_IOC_MAGIC, 3, __u64)
+// Lossy mode: pause/resume instead of stalling the core. Set while disabled.
+#define TRACE_IOC_LOSSY           _IOW(TRACE_IOC_MAGIC, 7, __u32)
+#define TRACE_IOC_GAP_CYCLES      _IOR(TRACE_IOC_MAGIC, 8, __u64)
+#define TRACE_IOC_DROPPED_PACKETS _IOR(TRACE_IOC_MAGIC, 9, __u64)
+#define TRACE_IOC_PAUSE_COUNT     _IOR(TRACE_IOC_MAGIC, 10, __u64)
 
 static inline int tacit_open(void) {
   const char *devpath = "/dev/tacit0";
@@ -48,6 +54,22 @@ static inline int tacit_target(int fd, __u8 target) {
 
 static inline int tacit_stall_count(int fd, uint64_t *count) {
   return ioctl(fd, TRACE_IOC_STALL_COUNT, count);
+}
+
+static inline int tacit_lossy(int fd, __u32 lossy) {
+  return ioctl(fd, TRACE_IOC_LOSSY, lossy);
+}
+
+static inline int tacit_gap_cycles(int fd, uint64_t *count) {
+  return ioctl(fd, TRACE_IOC_GAP_CYCLES, count);
+}
+
+static inline int tacit_dropped_packets(int fd, uint64_t *count) {
+  return ioctl(fd, TRACE_IOC_DROPPED_PACKETS, count);
+}
+
+static inline int tacit_pause_count(int fd, uint64_t *count) {
+  return ioctl(fd, TRACE_IOC_PAUSE_COUNT, count);
 }
 
 static inline int tacit_close(int fd) {

@@ -41,13 +41,26 @@ static void drain_tacit_log(int fd) {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) { fprintf(stderr, "usage: trace-submit <command> [args...]\n"); return 2; }
+  int lossy = 0;
+  if (argc > 1 && strcmp(argv[1], "-l") == 0) {
+    lossy = 1;
+    argv++;
+    argc--;
+  }
+  if (argc < 2) { fprintf(stderr, "usage: trace-submit [-l] <command> [args...]\n"); return 2; }
 
   int fd = tacit_open();
   if (fd < 0) {
     fprintf(stderr, "failed to open /dev/tacit0\n");
     return 1;
   }
+
+  /* lossy must be configured before enable (the driver enforces -EBUSY) */
+  if (tacit_lossy(fd, lossy) < 0) {
+    fprintf(stderr, "failed to set lossy mode\n");
+    return 1;
+  }
+  printf("tacit lossy mode: %d\n", lossy);
 
   #ifdef TARGET_DMA
   if (tacit_target(fd, 1) < 0) {
@@ -90,7 +103,14 @@ int main(int argc, char **argv) {
     fprintf(stderr, "failed to get stall count\n");
     return 1;
   }
-  printf("stall count: %" PRIu64 "\n", count);
+  printf("full count: %" PRIu64 "\n", count);
+  uint64_t gap_cycles = 0, dropped = 0, pauses = 0;
+  if (tacit_gap_cycles(fd, &gap_cycles) == 0 &&
+      tacit_dropped_packets(fd, &dropped) == 0 &&
+      tacit_pause_count(fd, &pauses) == 0) {
+    printf("gap cycles: %" PRIu64 " dropped: %" PRIu64 " pauses: %" PRIu64 "\n",
+           gap_cycles, dropped, pauses);
+  }
   if (tacit_close(fd) < 0) {
     fprintf(stderr, "failed to close /dev/tacit0\n");
     return 1;
