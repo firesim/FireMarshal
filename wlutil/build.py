@@ -53,8 +53,31 @@ def buildBusybox(config):
     except wlutil.SubmoduleError as e:
         return doit.exceptions.TaskFailed(e)
 
-    shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', wlutil.getOpt('busybox-dir') / '.config')
-    wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=wlutil.getOpt('busybox-dir'))
+    busyboxDir = wlutil.getOpt('busybox-dir')
+    # taken from Buildroot 2026.08-rc3, which uses the same patch to fix https://lists.busybox.net/pipermail/busybox/2026-August/092422.html
+    # https://gitlab.com/buildroot.org/buildroot/-/raw/2026.08-rc3/package/busybox/0006-tc-Fix-compilation-with-Linux-v6.8-rc1.patch
+    busyboxPatch = wlutil.getOpt('wlutil-dir') / 'busybox-patches' / '0001-tc-fix-linux-6.8.patch'
+    patchApplied = False
+
+    try:
+        patchCheck = wlutil.run(['git', 'apply', '--check', str(busyboxPatch)], cwd=busyboxDir, check=False)
+        if patchCheck.returncode == 0:
+            wlutil.run(['git', 'apply', str(busyboxPatch)], cwd=busyboxDir)
+            patchApplied = True
+        else:
+            # Accept a patch left applied by an interrupted prior build, but fail
+            # if the BusyBox sources are incompatible with the vendored patch.
+            reverseCheck = wlutil.run(['git', 'apply', '--reverse', '--check', str(busyboxPatch)],
+                                      cwd=busyboxDir, check=False)
+            if reverseCheck.returncode != 0:
+                wlutil.run(['git', 'apply', '--check', str(busyboxPatch)], cwd=busyboxDir)
+
+        shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', busyboxDir / '.config')
+        wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=busyboxDir)
+    finally:
+        if patchApplied:
+            wlutil.run(['git', 'apply', '--reverse', str(busyboxPatch)], cwd=busyboxDir)
+
     shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'disk' / 'bin/')
     shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin/')
     return True
@@ -174,7 +197,8 @@ def addDep(loader, config):
         'actions': [(buildBusybox, [config])],
         'targets': [wlutil.getOpt('initramfs-dir') / 'disk' / 'bin' / 'busybox',
                     wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin' / 'busybox'],
-        'file_dep': [wlutil.getOpt('wlutil-dir') / 'busybox-config'],
+        'file_dep': [wlutil.getOpt('wlutil-dir') / 'busybox-config',
+                     wlutil.getOpt('wlutil-dir') / 'busybox-patches' / '0001-tc-fix-linux-6.8.patch'],
         'uptodate': [wlutil.config_changed(wlutil.checkGitStatus(wlutil.getOpt('busybox-dir'))),
                      wlutil.config_changed(wlutil.getToolVersions())]
         })
