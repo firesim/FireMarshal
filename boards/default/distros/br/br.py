@@ -179,30 +179,21 @@ class Builder:
             f.write('BR2_JLEVEL='+str(wlutil.getOpt('jlevel'))+'\n')
             f.write('BR2_PACKAGE_HOST_E2FSPROGS'+'=y\n')
 
+        # force lp64 ABI instead of lp64d to avoid rvv instruction contamination, see https://github.com/firesim/FireMarshal/pull/327
+        abiKfrag = wlutil.getOpt('gen-dir') / 'brScalarAbiKfrag'
+        with open(abiKfrag, 'w') as f:
+            f.write('BR2_RISCV_ABI_LP64=y\n')
+            f.write('# BR2_RISCV_ABI_LP64F is not set\n')
+            f.write('# BR2_RISCV_ABI_LP64D is not set\n')
+
         # Default Configuration (allows us to bump BR independently of our configs)
         defconfig = wlutil.getOpt('gen-dir') / 'brDefConfig'
         wlutil.run(['make', 'defconfig'], cwd=(br_dir / 'buildroot'), env=env)
         shutil.copy(br_dir / 'buildroot' / '.config', defconfig)
 
-        kFrags = [defconfig, toolKfrag] + self.opts['configs']
+        kFrags = [defconfig, toolKfrag] + self.opts['configs'] + [abiKfrag]
         mergeScript = br_dir / 'merge_config.sh'
         wlutil.run([mergeScript] + kFrags, cwd=(br_dir / 'buildroot'), env=env)
-
-        # Fakeroot needs to be set to 1.31 to compile with sysroot 2.17
-        fakerootVersion = 1.31
-        fakerootSite = "https://snapshot.debian.org/archive/debian/20240401T084438Z/pool/main/f/fakeroot"
-        fakerootTarFile = f"fakeroot_{fakerootVersion}.orig.tar.gz"
-        fakerootTar = br_dir / fakerootTarFile
-        fakerootDir = br_dir / f"fakeroot-{fakerootVersion}"
-
-        urllib.request.urlretrieve(fakerootSite + "/" + fakerootTarFile, fakerootTar)
-        wlutil.run(["tar", "-xzvf", str(fakerootTar)], cwd=br_dir, env=env)
-
-        # create a local.mk for buildroot
-        # Do this to override builtin buildroot package sourcecodes as needed
-        localMk = br_dir / 'buildroot' / 'local.mk'
-        with open(localMk, 'w') as f:
-            f.write(f"FAKEROOT_OVERRIDE_SRCDIR = {str(fakerootDir)}")
 
     # Build a base image in the requested format and return an absolute path to that image
     def buildBaseImage(self, task, changed):
@@ -255,6 +246,18 @@ class Builder:
             env.pop('PERL_MM_OPT', None)
             env = {**env, **self.opts['environment']}
 
+            abiMarker = br_dir / 'buildroot' / 'output' / '.firemarshal-abi'
+            needsAbiClean = True
+            try:
+                needsAbiClean = abiMarker.read_text() != 'lp64\n'
+            except FileNotFoundError:
+                pass
+
+            # Changing the ABI requires rebuilding packages, not just
+            # reinstalling their existing output into output/target.
+            if needsAbiClean:
+                wlutil.run(['make', 'clean'], cwd=br_dir / 'buildroot', env=env)
+
             self.configure(env)
 
             # Less invasive "make clean":
@@ -269,6 +272,8 @@ class Builder:
             wlutil.run(['find', 'buildroot/output/', '-name', '".stamp_target_installed"', '-delete'], cwd=br_dir, env=env)
 
             wlutil.run(['make'], cwd=br_dir / "buildroot", env=env)
+            abiMarker.parent.mkdir(parents=True, exist_ok=True)
+            abiMarker.write_text('lp64\n')
 
             self.outputImg.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(img_dir / 'rootfs.ext2', self.outputImg)

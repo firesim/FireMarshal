@@ -53,8 +53,45 @@ def buildBusybox(config):
     except wlutil.SubmoduleError as e:
         return doit.exceptions.TaskFailed(e)
 
-    shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', wlutil.getOpt('busybox-dir') / '.config')
-    wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=wlutil.getOpt('busybox-dir'))
+    busyboxDir = wlutil.getOpt('busybox-dir')
+    # taken from Buildroot 2026.08-rc3, which uses the same patch to fix https://lists.busybox.net/pipermail/busybox/2026-August/092422.html
+    # https://gitlab.com/buildroot.org/buildroot/-/blob/2026.08-rc3/package/busybox/0006-tc-Fix-compilation-with-Linux-v6.8-rc1.patch
+    busyboxPatch = wlutil.getOpt('wlutil-dir') / 'busybox-patches' / '0001-tc-fix-linux-6.8.patch'
+    patchApplied = False
+
+    try:
+        patchCheck = wlutil.run(['git', 'apply', '--check', str(busyboxPatch)], cwd=busyboxDir, check=False)
+        if patchCheck.returncode == 0:
+            wlutil.run(['git', 'apply', str(busyboxPatch)], cwd=busyboxDir)
+            patchApplied = True
+        else:
+            # Accept a patch left applied by an interrupted prior build, but fail
+            # if the BusyBox sources are incompatible with the vendored patch.
+            reverseCheck = wlutil.run(['git', 'apply', '--reverse', '--check', str(busyboxPatch)],
+                                      cwd=busyboxDir, check=False)
+            if reverseCheck.returncode != 0:
+                wlutil.run(['git', 'apply', '--check', str(busyboxPatch)], cwd=busyboxDir)
+
+        busyboxConfig = busyboxDir / '.config'
+        shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', busyboxConfig)
+
+        # Use lp64 mabi to avoid rvv instructions due to autovectorization of glibc functions, see https://github.com/firesim/FireMarshal/pull/327
+        # Vector-capable workloads/cores must rebuild BusyBox with their
+        # workload-specific vector ISA and ABI settings.
+        busyboxLines = busyboxConfig.read_text().splitlines()
+        busyboxFlags = '-march=rv64gc -mabi=lp64'
+        busyboxLdFlags = '-mabi=lp64'
+        for index, line in enumerate(busyboxLines):
+            if line == 'CONFIG_EXTRA_CFLAGS=""':
+                busyboxLines[index] = 'CONFIG_EXTRA_CFLAGS="' + busyboxFlags + '"'
+            elif line == 'CONFIG_EXTRA_LDFLAGS=""':
+                busyboxLines[index] = 'CONFIG_EXTRA_LDFLAGS="' + busyboxLdFlags + '"'
+        busyboxConfig.write_text('\n'.join(busyboxLines) + '\n')
+        wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=busyboxDir)
+    finally:
+        if patchApplied:
+            wlutil.run(['git', 'apply', '--reverse', str(busyboxPatch)], cwd=busyboxDir)
+
     shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'disk' / 'bin/')
     shutil.copy(wlutil.getOpt('busybox-dir') / 'busybox', wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin/')
     return True
@@ -174,7 +211,8 @@ def addDep(loader, config):
         'actions': [(buildBusybox, [config])],
         'targets': [wlutil.getOpt('initramfs-dir') / 'disk' / 'bin' / 'busybox',
                     wlutil.getOpt('initramfs-dir') / 'nodisk' / 'bin' / 'busybox'],
-        'file_dep': [wlutil.getOpt('wlutil-dir') / 'busybox-config'],
+        'file_dep': [wlutil.getOpt('wlutil-dir') / 'busybox-config',
+                     wlutil.getOpt('wlutil-dir') / 'busybox-patches' / '0001-tc-fix-linux-6.8.patch'],
         'uptodate': [wlutil.config_changed(wlutil.checkGitStatus(wlutil.getOpt('busybox-dir'))),
                      wlutil.config_changed(wlutil.getToolVersions())]
         })
@@ -190,7 +228,10 @@ def addDep(loader, config):
         hostInit = [str(config['host-init'])]
 
     # Add a rule for the binary
-    bin_file_deps = []
+    # The bootbinary's initramfs and kernel build depend on the base image
+    # inputs. Keep those as file dependencies as well as task dependencies;
+    # otherwise a rebuilt Buildroot image can leave a stale disk bootbinary.
+    bin_file_deps = [] + config['base-deps']
     bin_task_deps = [] + hostInit + config['base-deps']
     bin_targets = []
     if 'linux' in config:
@@ -524,11 +565,24 @@ def makeOpenSBI(config, nodisk=False):
 
     # Align to next MiB
     payloadSize = ((size + 0xfffff) // 0x100000) * 0x100000
+    # Default memory layout:
+    #
+    # 0x80000000  +--------------------------------------+
+    #             | OpenSBI                              | runtime base
+    #             | Remaining alignment space            |
+    # 0x80200000  +--------------------------------------+
+    #             | Linux kernel                         | runtime base
+    #             | Includes initramfs for nodisk builds | + FW_PAYLOAD_OFFSET
+    #             | Reserved through payloadSize         |
+    #             +--------------------------------------+
+    #             | Copied device tree from bootrom      | FW_PAYLOAD_FDT_ADDR
+    #             +--------------------------------------+
+    #
+    payloadFdtAddr = 0x80000000 + 0x200000 + payloadSize
     makeArgsOpts = ['PLATFORM=generic',
+                    'FW_PAYLOAD_OFFSET=0x200000',
                     'FW_PAYLOAD_PATH=' + str(payload),
-                    'FW_PAYLOAD_FDT_ADDR=0x$(shell printf "%X" '
-                    '$$(( $(FW_TEXT_START) + $(FW_PAYLOAD_OFFSET) + ' +
-                    hex(payloadSize) + ' )))']
+                    'FW_PAYLOAD_FDT_ADDR=0x{:X}'.format(payloadFdtAddr)]
 
     args = wlutil.getOpt('linux-make-args') + makeArgsOpts
 
