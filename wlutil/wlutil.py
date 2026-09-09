@@ -698,6 +698,7 @@ def copyImgFiles(img, files, direction):
     direction - "in" or "out" for copying files into or out of the image (respectively)
     """
     log = logging.getLogger()
+    log.info(f"Copying {direction} files {files} to {img}")
     assert direction in ['in', 'out'], f"direction={direction} must be either 'in' or 'out'"
     with mountImg(img, getOpt('mount-dir')):
         for f in files:

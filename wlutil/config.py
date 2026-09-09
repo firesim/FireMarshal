@@ -106,6 +106,7 @@ configDerived = [
         'img-sz',  # Desired size of image in bytes (optional)
         'bin',  # Path to output binary
         'dwarf',  # Additional debugging symbols for the kernel
+        'driver-dwarfs',  # Dictionary of driver names to dwarf file paths
         'base-img',  # The filesystem image to use when building this workload
         'base-format',  # The format of base-img
         'cfg-file',  # Path to this workloads raw config file
@@ -557,7 +558,17 @@ class Config(collections.abc.MutableMapping):
             # Linux workloads get their own binary, whether from scratch or a
             # copy of their parent's
             self.cfg['bin'] = self.cfg['out-dir'] / (self.cfg['name'] + "-bin")
-            self.cfg['dwarf'] = self.cfg['out-dir'] / (self.cfg['name'] + "-bin-dwarf")
+            self.cfg['dwarf'] = self.cfg['out-dir'] / (
+                self.cfg['name'] + "-bin-dwarf")
+
+            # Initialize driver dwarf files dictionary if modules exist
+            if 'modules' in self.cfg['linux']:
+                self.cfg['driver-dwarfs'] = {}
+                for driverName in self.cfg['linux']['modules'].keys():
+                    # Generate dwarf file path for each driver module
+                    dwarf_name = f"{driverName}-dwarf"
+                    self.cfg['driver-dwarfs'][driverName] = (
+                        self.cfg['out-dir'] / dwarf_name)
 
             # To avoid needlessly recompiling kernels, we check if the child has
             # the exact same binary-related configuration. If 'use-parent-bin'

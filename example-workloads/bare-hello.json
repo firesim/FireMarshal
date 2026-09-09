@@ -1,0 +1,7 @@
+{
+  "name" : "bare-hello",
+  "base" : "bare-base.json",
+  "host-init" : "build.sh",
+  "bin" : "trace-hello.elf",
+  "spike-args" : "--extlib libspikedevices.so --device=trace_encoder_ctrl --trace l "
+}
