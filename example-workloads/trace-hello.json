@@ -17,11 +17,21 @@
     },
     {
       "name": "trace-hello",
-      "command": "/root/trace-hello/trace-submit /root/trace-hello/hello"
+      "command": "/root/trace-hello/trace-submit /root/trace-hello/hello",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
     },
     {
       "name": "trace-hello-lossy",
-      "command": "/root/trace-hello/trace-submit -l /root/trace-hello/hello"
+      "command": "/root/trace-hello/trace-submit -l /root/trace-hello/hello",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
     }
   ]
 }

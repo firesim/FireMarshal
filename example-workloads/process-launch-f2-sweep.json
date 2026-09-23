@@ -1,0 +1,59 @@
+{
+  "name": "process-launch-f2-sweep",
+  "base": "br-base.json",
+  "workdir": "process-launch",
+  "iceblk-persistent-modification": true,
+  "spike-args": "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "jobs": [
+    {
+      "name": "nt-8000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 8000"
+    },
+    {
+      "name": "tp-8000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 8000"
+    },
+    {
+      "name": "nt-9000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 9000"
+    },
+    {
+      "name": "tp-9000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 9000"
+    },
+    {
+      "name": "nt-11000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 11000"
+    },
+    {
+      "name": "tp-11000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 11000"
+    },
+    {
+      "name": "nt-12000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 12000"
+    },
+    {
+      "name": "tp-12000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 12000"
+    },
+    {
+      "name": "nt-13000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 13000"
+    },
+    {
+      "name": "tp-13000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 13000"
+    },
+    {
+      "name": "nt-14000",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 14000"
+    },
+    {
+      "name": "tp-14000",
+      "command": "sh /root/process-launch/tp-collect.sh lite 14000"
+    }
+  ]
+}
