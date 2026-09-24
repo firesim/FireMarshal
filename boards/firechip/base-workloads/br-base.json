@@ -12,7 +12,8 @@
       "config" : "linux-config",
       "modules" : {
           "icenet" : "../../drivers/icenet-driver",
-          "iceblk" : "../../drivers/iceblk-driver"
+          "iceblk" : "../../drivers/iceblk-driver",
+          "tacit" : "../../drivers/tacit-driver"
       }
   },
   "firmware" : {

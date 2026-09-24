@@ -37,6 +37,8 @@ def getSpikeCmd(config, nodisk=False):
         log.warn("You have hard-coded a disk image in your workload. Spike does not support disk images, your workload may not work correctly. Consider building with the '--nodisk' option (for linux-based workloads).")
     elif 'img' in config and not nodisk:
         riscv_lib_path = os.getenv('RISCV')
+        # try to get iceblk-persistent-modification from config
+        iceblk_persistent_modification = config.get('iceblk-persistent-modification', False)
         if riscv_lib_path is None:
             raise ValueError("The RISCV environment variable is not set")
         elif not os.path.isfile(riscv_lib_path+'/lib/libspikedevices.so'):
@@ -44,7 +46,10 @@ def getSpikeCmd(config, nodisk=False):
         else:
             spikeArgs += '--extlib=libspikedevices.so ' +\
                          "--device=\"iceblk," +\
-                         'img=' + str(config.get('img', '')) + "\" "
+                         'img=' + str(config.get('img', ''))
+            if iceblk_persistent_modification:
+                spikeArgs += ",iceblk-persistent-modification=true"
+            spikeArgs += "\" "
 
     if 'spike' in config:
         spikeBin = str(config['spike'])

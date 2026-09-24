@@ -10,3 +10,9 @@ boards/default/distros/ubuntu/rootfs.img*
 *#
 .conda-env
 .conda-lock-env
+.vscode
+
+# Stale decoder debug output dropped at the repo root by trace runs.
+tacit.log
+tacit.out
+tacit.debug

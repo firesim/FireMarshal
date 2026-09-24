@@ -16,3 +16,6 @@
 [submodule "boards/firechip/drivers/iceblk-driver"]
 	path = boards/firechip/drivers/iceblk-driver
 	url = https://github.com/firesim/iceblk-driver.git
+[submodule "boards/firechip/drivers/tacit-driver"]
+	path = boards/firechip/drivers/tacit-driver
+	url = https://github.com/riscv-tacit/tacit_driver.git

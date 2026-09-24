@@ -1,0 +1,29 @@
+{
+  "name" : "ipi-storm",
+  "base" : "br-base.json",
+  "iceblk-persistent-modification" : true,
+  "spike-args" : "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
+  "jobs" : [
+    {
+      "name" : "run-chores",
+      "iceblk-persistent-modification" : true,
+      "outputs" : [
+        "/root/chores/driver_map.txt",
+        "/root/chores/jump_label_patch_map.txt"
+      ],
+      "run" : "run-chores.sh"
+    },
+    {
+      "name" : "ipi-storm",
+      "command" : "/root/ipi-storm/trace-submit /root/ipi-storm/hello",
+      "firesim" : {
+        "simulation_outputs" : [
+          "tacit0.out",
+          "tacit1.out"
+        ]
+      }
+    }
+  ]
+}

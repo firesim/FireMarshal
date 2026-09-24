@@ -1,0 +1,7 @@
+{
+  "name" : "prefetch-smoke",
+  "base" : "br-base.json",
+  "overlay" : "overlay",
+  "host-init" : "host-init.sh",
+  "command" : "/root/prefetch-smoke/prefetch-smoke"
+}

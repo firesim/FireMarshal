@@ -1,0 +1,19 @@
+{
+  "name": "lua-microbench-fused",
+  "base": "br-base.json",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "command": "cd /root/lua-dispatch && ./lua bench/spectralnorm.lua 100 && ./lua bench/mandelbrot.lua 200 && ./lua bench/fasta.lua 100000 && ./lua bench/queens.lua 8 && echo LUA_ALL_OK",
+  "jobs": [
+    {"name": "microF-spectralnorm-traced", "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/spectralnorm.lua 600",
+     "firesim": {"simulation_outputs": ["tacit0.out"]}},
+    {"name": "microF-mandelbrot-traced", "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/mandelbrot.lua 900",
+     "firesim": {"simulation_outputs": ["tacit0.out"]}},
+    {"name": "microF-fasta-traced", "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/fasta.lua 4500000",
+     "firesim": {"simulation_outputs": ["tacit0.out"]}},
+    {"name": "microF-queens-traced", "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/queens.lua 12",
+     "firesim": {"simulation_outputs": ["tacit0.out"]}},
+    {"name": "microF-chores", "command": "sh /root/lua-dispatch/run-chores.sh",
+     "outputs": ["/root/chores/driver_map.txt", "/root/chores/jump_label_patch_map.txt"]}
+  ]
+}

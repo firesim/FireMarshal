@@ -1,0 +1,54 @@
+{
+  "name": "process-launch-f2",
+  "base": "br-base.json",
+  "workdir": "process-launch",
+  "iceblk-persistent-modification": true,
+  "spike-args": "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "jobs": [
+    {
+      "name": "run-chores",
+      "iceblk-persistent-modification": true,
+      "outputs": [
+        "/root/chores/driver_map.txt",
+        "/root/chores/jump_label_patch_map.txt"
+      ],
+      "run": "run-chores.sh"
+    },
+    {
+      "name": "collect-10k",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 10000"
+    },
+    {
+      "name": "collect-10k-fix",
+      "command": "/root/process-launch/rcu-batch && /root/process-launch/submit /root/process-launch/dummy 10000"
+    },
+    {
+      "name": "trace-256",
+      "command": "/root/process-launch/trace-submit /root/process-launch/dummy 256",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "trace-256-fix",
+      "command": "/root/process-launch/rcu-batch && /root/process-launch/trace-submit /root/process-launch/dummy 256",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "tp-full",
+      "command": "sh /root/process-launch/tp-collect.sh full 10000"
+    },
+    {
+      "name": "tp-lite",
+      "command": "sh /root/process-launch/tp-collect.sh lite 10000"
+    }
+  ]
+}
