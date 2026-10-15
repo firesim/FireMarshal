@@ -72,21 +72,7 @@ def buildBusybox(config):
             if reverseCheck.returncode != 0:
                 wlutil.run(['git', 'apply', '--check', str(busyboxPatch)], cwd=busyboxDir)
 
-        busyboxConfig = busyboxDir / '.config'
-        shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', busyboxConfig)
-
-        # Use lp64 mabi to avoid rvv instructions due to autovectorization of glibc functions, see https://github.com/firesim/FireMarshal/pull/327
-        # Vector-capable workloads/cores must rebuild BusyBox with their
-        # workload-specific vector ISA and ABI settings.
-        busyboxLines = busyboxConfig.read_text().splitlines()
-        busyboxFlags = '-march=rv64gc -mabi=lp64'
-        busyboxLdFlags = '-mabi=lp64'
-        for index, line in enumerate(busyboxLines):
-            if line == 'CONFIG_EXTRA_CFLAGS=""':
-                busyboxLines[index] = 'CONFIG_EXTRA_CFLAGS="' + busyboxFlags + '"'
-            elif line == 'CONFIG_EXTRA_LDFLAGS=""':
-                busyboxLines[index] = 'CONFIG_EXTRA_LDFLAGS="' + busyboxLdFlags + '"'
-        busyboxConfig.write_text('\n'.join(busyboxLines) + '\n')
+        shutil.copy(wlutil.getOpt('wlutil-dir') / 'busybox-config', busyboxDir / '.config')
         wlutil.run(['make', '-j' + str(wlutil.getOpt('jlevel'))], cwd=busyboxDir)
     finally:
         if patchApplied:

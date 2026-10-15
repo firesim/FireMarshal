@@ -179,19 +179,12 @@ class Builder:
             f.write('BR2_JLEVEL='+str(wlutil.getOpt('jlevel'))+'\n')
             f.write('BR2_PACKAGE_HOST_E2FSPROGS'+'=y\n')
 
-        # force lp64 ABI instead of lp64d to avoid rvv instruction contamination, see https://github.com/firesim/FireMarshal/pull/327
-        abiKfrag = wlutil.getOpt('gen-dir') / 'brScalarAbiKfrag'
-        with open(abiKfrag, 'w') as f:
-            f.write('BR2_RISCV_ABI_LP64=y\n')
-            f.write('# BR2_RISCV_ABI_LP64F is not set\n')
-            f.write('# BR2_RISCV_ABI_LP64D is not set\n')
-
         # Default Configuration (allows us to bump BR independently of our configs)
         defconfig = wlutil.getOpt('gen-dir') / 'brDefConfig'
         wlutil.run(['make', 'defconfig'], cwd=(br_dir / 'buildroot'), env=env)
         shutil.copy(br_dir / 'buildroot' / '.config', defconfig)
 
-        kFrags = [defconfig, toolKfrag] + self.opts['configs'] + [abiKfrag]
+        kFrags = [defconfig, toolKfrag] + self.opts['configs']
         mergeScript = br_dir / 'merge_config.sh'
         wlutil.run([mergeScript] + kFrags, cwd=(br_dir / 'buildroot'), env=env)
 
@@ -246,17 +239,12 @@ class Builder:
             env.pop('PERL_MM_OPT', None)
             env = {**env, **self.opts['environment']}
 
-            abiMarker = br_dir / 'buildroot' / 'output' / '.firemarshal-abi'
-            needsAbiClean = True
-            try:
-                needsAbiClean = abiMarker.read_text() != 'lp64\n'
-            except FileNotFoundError:
-                pass
-
-            # Changing the ABI requires rebuilding packages, not just
-            # reinstalling their existing output into output/target.
-            if needsAbiClean:
+            # Discard packages built with the former forced lp64 ABI, then
+            # remove the legacy marker so this migration runs only once.
+            legacyAbiMarker = br_dir / 'buildroot' / 'output' / '.firemarshal-abi'
+            if legacyAbiMarker.exists():
                 wlutil.run(['make', 'clean'], cwd=br_dir / 'buildroot', env=env)
+                legacyAbiMarker.unlink()
 
             self.configure(env)
 
@@ -272,8 +260,6 @@ class Builder:
             wlutil.run(['find', 'buildroot/output/', '-name', '".stamp_target_installed"', '-delete'], cwd=br_dir, env=env)
 
             wlutil.run(['make'], cwd=br_dir / "buildroot", env=env)
-            abiMarker.parent.mkdir(parents=True, exist_ok=True)
-            abiMarker.write_text('lp64\n')
 
             self.outputImg.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(img_dir / 'rootfs.ext2', self.outputImg)
