@@ -1,0 +1,27 @@
+{
+  "name": "process-launch-f2-ftrace",
+  "base": "br-base.json",
+  "workdir": "process-launch",
+  "iceblk-persistent-modification": true,
+  "spike-args": "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "jobs": [
+    {
+      "name": "tp-lite-save",
+      "iceblk-persistent-modification": true,
+      "command": "sh /root/process-launch/tp-collect-save.sh lite 10000",
+      "outputs": [
+        "/root/ftrace-lite.txt.gz"
+      ]
+    },
+    {
+      "name": "tp-lite-save-fix",
+      "iceblk-persistent-modification": true,
+      "command": "/root/process-launch/rcu-batch && sh /root/process-launch/tp-collect-save.sh lite 10000",
+      "outputs": [
+        "/root/ftrace-lite.txt.gz"
+      ]
+    }
+  ]
+}

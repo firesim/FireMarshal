@@ -1,0 +1,53 @@
+{
+  "name": "lua-dispatch-fused2",
+  "base": "br-base.json",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "command": "cd /root/lua-dispatch && ./lua bench/nbody.lua 1000 && ./lua bench/fannkuch.lua 7 && ./lua bench/sieve.lua 100000 && ./lua bench/binarytrees.lua 10 && echo LUA_ALL_OK",
+  "jobs": [
+    {
+      "name": "fused2-nbody-traced",
+      "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/nbody.lua 225000",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "fused2-fannkuch-traced",
+      "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/fannkuch_rep.lua 4 9",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "fused2-binarytrees-traced",
+      "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/binarytrees.lua 14",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "fused2-sieve-traced",
+      "command": "cd /root/lua-dispatch && ./trace-run ./lua bench/sieve.lua 15000000",
+      "firesim": {
+        "simulation_outputs": [
+          "tacit0.out"
+        ]
+      }
+    },
+    {
+      "name": "fused2-chores",
+      "command": "sh /root/lua-dispatch/run-chores.sh",
+      "outputs": [
+        "/root/chores/driver_map.txt",
+        "/root/chores/jump_label_patch_map.txt"
+      ]
+    }
+  ]
+}

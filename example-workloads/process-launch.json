@@ -1,0 +1,78 @@
+{
+  "name": "process-launch",
+  "base": "br-base.json",
+  "iceblk-persistent-modification": true,
+  "spike-args": "--device=trace_encoder_ctrl --trace l --isa rv64imafdc_zicntr_zihpm_zbb",
+  "overlay": "overlay",
+  "host-init": "host-init.sh",
+  "jobs": [
+    {
+      "name": "process-launch-collect",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 1000"
+    },
+    {
+      "name": "process-launch",
+      "command": "/root/process-launch/trace-submit /root/process-launch/dummy 64"
+    },
+    {
+      "name": "process-launch-collect-fix",
+      "command": "/root/process-launch/rcu-batch && /root/process-launch/submit /root/process-launch/dummy 1000"
+    },
+    {
+      "name": "process-launch-fix",
+      "command": "/root/process-launch/rcu-batch && /root/process-launch/trace-submit /root/process-launch/dummy 64"
+    },
+    {
+      "name": "process-launch-collect-10k",
+      "command": "/root/process-launch/submit /root/process-launch/dummy 10000"
+    },
+    {
+      "name": "process-launch-collect-10k-fix",
+      "command": "/root/process-launch/rcu-batch && /root/process-launch/submit /root/process-launch/dummy 10000"
+    },
+    {
+      "name": "process-launch-256",
+      "command": "/root/process-launch/trace-submit /root/process-launch/dummy 256"
+    },
+    {
+      "name": "process-launch-320",
+      "command": "/root/process-launch/trace-submit /root/process-launch/dummy 320"
+    },
+    {
+      "name": "process-launch-collect-10k-tp",
+      "command": "sh /root/process-launch/tp-collect.sh full 10000"
+    },
+    {
+      "name": "process-launch-collect-10k-tp-lite",
+      "command": "sh /root/process-launch/tp-collect.sh lite 10000"
+    },
+    {
+      "name": "process-launch-tp-trace-256",
+      "command": "sh /root/process-launch/tp-trace.sh full 256"
+    },
+    {
+      "name": "process-launch-tp-trace-2048",
+      "command": "sh /root/process-launch/tp-trace.sh full 2048"
+    },
+    {
+      "name": "process-launch-tp-trace-272",
+      "command": "sh /root/process-launch/tp-trace.sh full 272"
+    },
+    {
+      "name": "process-launch-tp-trace-288",
+      "command": "sh /root/process-launch/tp-trace.sh full 288"
+    },
+    {
+      "name": "process-launch-tp-trace-304",
+      "command": "sh /root/process-launch/tp-trace.sh full 304"
+    },
+    {
+      "name": "process-launch-tp-trace-320",
+      "command": "sh /root/process-launch/tp-trace.sh full 320"
+    },
+    {
+      "name": "process-launch-tp-trace-336",
+      "command": "sh /root/process-launch/tp-trace.sh full 336"
+    }
+  ]
+}

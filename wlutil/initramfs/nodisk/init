@@ -9,7 +9,17 @@ mount -t devtmpfs none /dev
 
 # Load all kernel modules in /lib/modules/KERNELVERSION/*.ko
 echo "Loading FireMarshal platform drivers"
+# Pinned order first: a module's base address depends on the spans of the
+# modules loaded before it, so keep tacit last (see disk/init).
+for mod in icenet iceblk tacit ; do
+  modprobe "${mod}" 2>/dev/null || true
+done
 modprobe -a $(modprobe -l)
+
+# Record module load addresses on the console for trace decoding
+echo "::MODULES_BEGIN::"
+cat /proc/modules
+echo "::MODULES_END::"
 
 umount /proc
 umount /sys

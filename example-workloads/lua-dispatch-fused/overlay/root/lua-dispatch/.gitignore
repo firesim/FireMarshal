@@ -1,0 +1,4 @@
+# Built by host-init.sh (make trace-run).
+# NOTE: `lua` is NOT built here -- it is the patched interpreter produced by
+# software/lua-dispatch/build.sh, so it is carried in the overlay.
+trace-run
